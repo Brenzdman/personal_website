@@ -1,25 +1,48 @@
 // Includes image of myself and a brief introduction
 import image from "../public/images/Brenden_Bushman_Circle.jpg";
+import intro from "../text/intro";
 
 export default function TopSegment() {
   return (
     <div
       style={{
         display: "flex",
-              justifyContent: "space-between", 
-        border: "1px solid black",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "20px",
+        borderRadius: "15px",
+        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <h1 style={{ textAlign: "left" }}>Hi, my name is Brenden Bushman and I am studying Computer Science at the University of Wisconsin Madison.</h1>
-      <img
+      <div
         style={{
-          borderRadius: "50%",
-          width: "25vw",
-          height: "25vw",
+          flex: 1,
+          padding: "20px",
+          color: "#333",
+          fontSize: "1.2rem",
+          lineHeight: "1.6",
         }}
-        src={image.src}
-        alt="Brenden Bushman"
-      />
+      >
+        {intro()}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          style={{
+            borderRadius: "50%",
+            width: "20vw",
+            height: "20vw",
+            boxShadow: "0 6px 10px rgba(0, 0, 0, 0.15)",
+          }}
+          src={image.src}
+          alt="Brenden Bushman"
+        />
+      </div>
     </div>
   );
 }

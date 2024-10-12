@@ -8,8 +8,11 @@ export function Border({ children }: BorderProps) {
   return (
     <div
       style={{
-        padding: "3rem",
-        margin: "1rem",
+        background: "linear-gradient(135deg, #f0f0f0, #dfe9f3)",
+        paddingLeft: "10rem",
+        paddingRight: "10rem",
+        paddingTop: "2rem",
+        paddingBottom: "2rem",
       }}
     >
       {children}
