@@ -8,9 +8,11 @@ export default function TopSegment() {
       style={{
         display: "flex",
         justifyContent: "space-between",
+        backgroundColor: "#fdfdfd",
         alignItems: "center",
         padding: "20px",
-        borderRadius: "15px",
+        borderLeft: "5px",
+        borderRight: "5px",
         boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
       }}
     >
@@ -35,8 +37,8 @@ export default function TopSegment() {
         <img
           style={{
             borderRadius: "50%",
-            width: "20vw",
-            height: "20vw",
+            width: "25vw",
+            height: "25vw",
             boxShadow: "0 6px 10px rgba(0, 0, 0, 0.15)",
           }}
           src={image.src}
