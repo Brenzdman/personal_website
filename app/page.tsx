@@ -1,4 +1,5 @@
 import { Border } from "@/components/Border";
+import { Canvas } from "@/components/game/Canvas";
 import LinkSegment from "@/components/LinkSegment";
 import TopSegment from "@/components/TopSegment";
 
@@ -9,6 +10,8 @@ export default function Home() {
         <LinkSegment />
         <TopSegment />
       </Border>
+
+      <Canvas />
     </div>
   );
 }
