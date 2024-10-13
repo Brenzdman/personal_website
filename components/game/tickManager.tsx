@@ -9,9 +9,12 @@ import { SnakeGame } from "./Snake/SnakeGame";
 
 export let snakeGame: SnakeGame;
 
-export function resetGames() {
-  console.log("initializing games");
+export function canvasClick() {
+  resetGames();
+  snakeGame.AI = false;
+}
 
+function resetGames() {
   if (!snakeGame || snakeGame.snake.lives === 0) {
     snakeGame = new SnakeGame();
   }
@@ -41,14 +44,14 @@ export default function TickManager() {
   return <div></div>;
 }
 
-export function addEventListeners() {
+function addEventListeners() {
   if (snakeGame) {
     window.addEventListener("resize", snakeGame.handleResize);
     window.addEventListener("keydown", snakeGame.handleSnakeKeyDown);
   }
 }
 
-export function removeEventListeners() {
+function removeEventListeners() {
   if (snakeGame) {
     window.removeEventListener("resize", snakeGame.handleResize);
     window.removeEventListener("keydown", snakeGame.handleSnakeKeyDown);

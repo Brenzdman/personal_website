@@ -1,15 +1,14 @@
 "use client";
 
+import { GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
 import { Snake } from "./Snake";
 
-// Snake Game Class
-const INITIAL_SPEED = 25;
-
 export class SnakeGame {
   // Snake Variables
   public grid: Grid;
+  public AI: boolean = true;
   public apple: Apple;
   public snake: Snake;
   public tickNumber: number;
@@ -24,7 +23,7 @@ export class SnakeGame {
     this.tickNumber = 0;
     this.nextDirection = undefined;
     this.subsequentDirection = undefined;
-    this.speed = INITIAL_SPEED;
+    this.speed = GAME_SPEED;
   }
 
   handleResize = () => {
@@ -53,6 +52,10 @@ export class SnakeGame {
 
   managePlayerSnake() {
     if (this.tickNumber % this.speed == 0) {
+      if (this.AI) {
+        this.nextDirection = this.getBestDirection();
+      }
+
       if (this.nextDirection !== undefined) {
         this.snake.direction = this.nextDirection;
         this.nextDirection = this.subsequentDirection;
@@ -62,7 +65,49 @@ export class SnakeGame {
     }
   }
 
+  // AI Functions
+  getBestDirection() {
+    let bestDirection = this.snake.naturalDirection;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < 4; i++) {
+      const direction = (i * Math.PI) / 2;
+      const score = this.getDirectionScore(direction);
+      if (score > bestScore) {
+        bestScore = score;
+        bestDirection = direction;
+      }
+    }
+
+    return bestDirection;
+  }
+
+  getDirectionScore(direction: number) {
+    const applePos = [this.apple.x, this.apple.y];
+
+    // Tiles that have a snake on them
+    const snakeTiles = this.snake.activeTiles.map((tile) => [tile.x, tile.y]);
+
+    // If collision is imminent in that direction
+    if (this.snake.isDangerAhead(direction)) return -Infinity;
+
+    const nextTile = this.snake.getNextTileID(direction);
+    const nextTilePos = [nextTile.x, nextTile.y];
+    const distance = this.getDistance(nextTilePos, applePos);
+
+    const score = 1 / distance;
+    return score;
+  }
+
+  getDistance(pos1: number[], pos2: number[]) {
+    return Math.sqrt(
+      Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
+    );
+  }
+
   handleSnakeKeyDown = (e: KeyboardEvent) => {
+    if (this.AI) return;
+
     let newDirection: number | undefined;
 
     switch (e.key) {

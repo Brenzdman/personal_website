@@ -91,14 +91,19 @@ export class Snake {
     }
   }
 
-  isDangerAhead(direction: number = this.direction) {
+  getNextTileID(direction: number = this.direction) {
     const epsilon = 0.0001; //to prevent rounding errors
     const nextX = Math.round(this.head.x + Math.cos(direction) + epsilon);
     const nextY = Math.round(this.head.y - Math.sin(direction) + epsilon); //y is inverted
 
-    if (this.isOutOfBounds(nextX, nextY)) return true;
+    return new TileID(nextX, nextY, this.grid);
+  }
 
-    const nextTileID = new TileID(nextX, nextY, this.grid);
+  isDangerAhead(direction: number = this.direction) {
+    const nextTileID = this.getNextTileID(direction);
+
+    if (this.isOutOfBounds(nextTileID.x, nextTileID.y)) return true;
+
     const nextTile = this.grid.gridTiles[nextTileID.x][nextTileID.y];
 
     if (this.isAppleEaten(nextTile)) return false;
