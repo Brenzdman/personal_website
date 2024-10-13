@@ -16,7 +16,7 @@ export class Snake {
   public direction: number = Math.PI / 2; //rads from 0 to 2pi
   public naturalDirection: number = this.direction; //prevents 180 degree turns
   public activeTiles: TileID[] = [];
-  public lives = 1;
+  public lives = 3;
 
   constructor(
     public grid: Grid,

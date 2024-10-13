@@ -3,12 +3,14 @@
 import { GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
+import { makeNewPath } from "./AStar";
 import { Snake } from "./Snake";
 
 export class SnakeGame {
   // Snake Variables
   public grid: Grid;
   public AI: boolean = true;
+  public AI_directions: number[] = [];
   public apple: Apple;
   public snake: Snake;
   public tickNumber: number;
@@ -51,59 +53,67 @@ export class SnakeGame {
   }
 
   managePlayerSnake() {
+    if (this.AI && this.AI_directions.length === 0) {
+      this.AI_directions = makeNewPath(this);
+    }
+
     if (this.tickNumber % this.speed == 0) {
       if (this.AI) {
-        this.nextDirection = this.getBestDirection();
+        const direction = this.AI_directions.shift();
+
+        if (direction !== undefined) {
+          this.snake.direction = direction;
+        }
+      } else {
+        if (this.nextDirection !== undefined) {
+          this.snake.direction = this.nextDirection;
+          this.nextDirection = this.subsequentDirection;
+          this.subsequentDirection = undefined;
+        }
       }
 
-      if (this.nextDirection !== undefined) {
-        this.snake.direction = this.nextDirection;
-        this.nextDirection = this.subsequentDirection;
-        this.subsequentDirection = undefined;
-      }
       this.snake.moveSnake();
     }
   }
 
-  // AI Functions
-  getBestDirection() {
-    let bestDirection = this.snake.naturalDirection;
-    let bestScore = -Infinity;
+  // getBestDirection() {
+  //   let bestDirection = this.snake.naturalDirection;
+  //   let bestScore = -Infinity;
 
-    for (let i = 0; i < 4; i++) {
-      const direction = (i * Math.PI) / 2;
-      const score = this.getDirectionScore(direction);
-      if (score > bestScore) {
-        bestScore = score;
-        bestDirection = direction;
-      }
-    }
+  //   for (let i = 0; i < 4; i++) {
+  //     const direction = (i * Math.PI) / 2;
+  //     const score = this.getDirectionScore(direction);
+  //     if (score > bestScore) {
+  //       bestScore = score;
+  //       bestDirection = direction;
+  //     }
+  //   }
 
-    return bestDirection;
-  }
+  //   return bestDirection;
+  // }
 
-  getDirectionScore(direction: number) {
-    const applePos = [this.apple.x, this.apple.y];
+  // getDirectionScore(direction: number) {
+  //   const applePos = [this.apple.x, this.apple.y];
 
-    // Tiles that have a snake on them
-    const snakeTiles = this.snake.activeTiles.map((tile) => [tile.x, tile.y]);
+  //   // Tiles that have a snake on them
+  //   const snakeTiles = this.snake.activeTiles.map((tile) => [tile.x, tile.y]);
 
-    // If collision is imminent in that direction
-    if (this.snake.isDangerAhead(direction)) return -Infinity;
+  //   // If collision is imminent in that direction
+  //   if (this.snake.isDangerAhead(direction)) return -Infinity;
 
-    const nextTile = this.snake.getNextTileID(direction);
-    const nextTilePos = [nextTile.x, nextTile.y];
-    const distance = this.getDistance(nextTilePos, applePos);
+  //   const nextTile = this.snake.getNextTileID(direction);
+  //   const nextTilePos = [nextTile.x, nextTile.y];
+  //   const distance = this.getDistance(nextTilePos, applePos);
 
-    const score = 1 / distance;
-    return score;
-  }
+  //   const score = 1 / distance;
+  //   return score;
+  // }
 
-  getDistance(pos1: number[], pos2: number[]) {
-    return Math.sqrt(
-      Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
-    );
-  }
+  // getDistance(pos1: number[], pos2: number[]) {
+  //   return Math.sqrt(
+  //     Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
+  //   );
+  // }
 
   handleSnakeKeyDown = (e: KeyboardEvent) => {
     if (this.AI) return;
