@@ -13,6 +13,7 @@ class Node {
   fCost: number;
   blocked: boolean = false;
   parent: Node | null;
+  timer: number = 0;
 
   constructor(x: number, y: number, parent: Node | null = null) {
     this.x = x;
@@ -103,17 +104,24 @@ class PriorityQueue {
 function generateGridArray(snakeGame: SnakeGame): Node[][] {
   let gridNodeArray: Node[][] = [];
 
+  // Initializes the grid with empty nodes
   for (let x = 0; x < snakeGame.grid.gridTilesX; x++) {
     gridNodeArray.push([]);
+
     for (let y = 0; y < snakeGame.grid.gridTilesY; y++) {
       gridNodeArray[x].push(new Node(x, y));
     }
   }
 
-  for (let i = 0; i < snakeGame.snake.activeTiles.length; i++) {
-    const tile = snakeGame.snake.activeTiles[i];
+  // Sets tiles that are blocked by the snake
+  const tiles = snakeGame.snake.activeTiles;
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = tiles[i];
     const gridTile = gridNodeArray[tile.x][tile.y];
     gridTile.blocked = true;
+
+    // Moves until the path is unblocked
+    gridTile.timer = tiles.length - i;
   }
 
   return gridNodeArray;
@@ -229,12 +237,13 @@ export function makeNewPath(info: SnakeGame): number[] {
       if (snake.isOutOfBounds(tileX, tileY)) continue;
 
       const gridLocation = gridArray[tileX][tileY];
-      if (gridLocation.blocked) continue;
+      const tentativeGCost = node.gCost + 1; // Uniform cost
+
+      if (gridLocation.blocked && gridLocation.timer >= tentativeGCost)
+        continue;
 
       // Check if the node is already in the closed list
       if (closedList.find((n) => n.x === tileX && n.y === tileY)) continue;
-
-      const tentativeGCost = node.gCost + 1; // Uniform cost
 
       // Check if the node is already in the open list
       const existingOpenNode = openList.findNode(tileX, tileY);
@@ -261,6 +270,8 @@ export function makeNewPath(info: SnakeGame): number[] {
 
   // Function to find a fallback direction when no path is found
   function getFallbackDirection(snake: any, grid: any): number[] {
+    // ALWAYS RETURNS RIGHT
+    // TODO: Implement a better fallback strategy
     const directions: [number, number, number][] = [
       [1, 0, 0], // Right
       [0, -1, (3 * Math.PI) / 2], // Up
@@ -279,24 +290,15 @@ export function makeNewPath(info: SnakeGame): number[] {
       }
     }
 
+    console.warn("No safe direction found, cya");
+
     // If no safe direction is found, continue in the current direction or handle accordingly
     // Here, returning the current direction as a fallback
     return [snake.currentDirection];
   }
 }
 
-// Helper function to determine the next position based on direction
-function getPositionFromDirection(
-  direction: number,
-  currentPos: [number, number]
-): [number, number] {
-  const nextX = currentPos[0] + Math.round(Math.cos(direction));
-  const nextY = currentPos[1] + Math.round(-Math.sin(direction));
-
-  return [nextX, nextY];
-}
-
-// Helper function to determine direction based on current and next positions
+// Determines direction based on current and next positions
 function getDirectionFromPosition(
   currentPos: [number, number],
   nextPos: [number, number]
@@ -321,10 +323,12 @@ function getDirectionFromPosition(
   }
 }
 
-// Heuristic function using Manhattan Distance
+// Heuristic function to estimate cost to goal
 function getHeuristicCost(
   pos1: [number, number],
   pos2: [number, number]
 ): number {
-  return Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
+  return Math.sqrt(
+    Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
+  );
 }

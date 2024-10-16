@@ -11,6 +11,7 @@ export class SnakeGame {
   public grid: Grid;
   public AI: boolean = true;
   public AI_directions: number[] = [];
+  public AI_dead: boolean = false;
   public apple: Apple;
   public snake: Snake;
   public tickNumber: number;
@@ -53,7 +54,7 @@ export class SnakeGame {
   }
 
   managePlayerSnake() {
-    if (this.AI && this.AI_directions.length === 0) {
+    if (this.AI && this.AI_directions.length === 0 && !this.AI_dead) {
       this.AI_directions = makeNewPath(this);
     }
 
@@ -70,6 +71,15 @@ export class SnakeGame {
           this.nextDirection = this.subsequentDirection;
           this.subsequentDirection = undefined;
         }
+      }
+
+      if (this.AI && this.snake.isDangerAhead(this.snake.direction)) {
+        if (!this.AI_dead) {
+          this.AI_dead = true;
+          console.warn("Danger ahead, cya");
+          console.warn("Direction: ", this.snake.direction);
+        }
+        return;
       }
 
       this.snake.moveSnake();
