@@ -1,8 +1,9 @@
 import { makeNewPath } from "./AStar";
 import { SnakeGame } from "./SnakeGame";
 
+type Direction = "up" | "down" | "left" | "right";
 class Node {
-  public nextDirection: "up" | "down" | "left" | "right";
+  public nextDirection: Direction;
 
   constructor(
     public x: number = 0,
@@ -23,7 +24,7 @@ class Node {
 
 let aStarDirections: number[] = [];
 let nodeArray: Node[] = [];
-let movingInReverse = false;   
+let movingInReverse = false;
 
 export function createHamiltonianCycle(info: SnakeGame) {
   const grid = info.grid;
@@ -102,7 +103,7 @@ export function drawHamiltonianCycle(info: SnakeGame) {
 }
 
 // Gets next direction based on current node
-export function getHamiltonianDirection(info: SnakeGame) {
+export function getHamiltonianDirection(info: SnakeGame): number {
   const canShortcut = shortcutPath(info);
   if (canShortcut !== undefined) {
     return canShortcut;
@@ -120,6 +121,11 @@ export function getHamiltonianDirection(info: SnakeGame) {
   }
 
   let direction = currentNode.nextDirection;
+
+  if (movingInReverse) {
+    direction = reverseDirection(currentNode);
+  }
+
   return convertDirectionToRadians(direction);
 }
 
@@ -156,17 +162,16 @@ function shortcutPath(info: SnakeGame): number | undefined {
     return aStarDirections.shift();
   }
 
-  let response = checkPath(info);
-
-  if (response === true) {
+  if (checkPath(info)) {
     return aStarDirections.shift();
   }
 
+  console.log("moving in reverse: ", movingInReverse);
   console.log("Can't shortcut");
 }
 
 // checks to see if shortcut will cut snake off from hamiltonian cycle
-function checkPath(info: SnakeGame): boolean | number {
+function checkPath(info: SnakeGame): boolean {
   const aStarPath = makeNewPath(info);
   const [simulatedNode, simulatedNodeArray]: [
     Node | undefined,
@@ -192,32 +197,42 @@ function checkPath(info: SnakeGame): boolean | number {
 
   // Checks if snake can easily reach the Hamiltonian cycle after this shortcut
 
-  if (checkHamiltonianCycle(simulatedNodeArray, currentNode, true)) {
+  if (checkHamiltonianCycle(simulatedNodeArray, currentNode, true, false)) {
     aStarDirections = aStarPath;
+    movingInReverse = false;
     return true;
-  } else {
-    return altRoute();
+  } else if (
+    checkHamiltonianCycle(simulatedNodeArray, currentNode, true, true)
+  ) {
+    aStarDirections = aStarPath;
+    movingInReverse = true;
+    return true;
   }
+
+  return false;
 
   function checkHamiltonianCycle(
     nodeArray: Node[],
     cNode: Node,
-    preMove: boolean
+    preMove: boolean,
+    reverse: boolean = false
   ): boolean {
     let mod = preMove ? 1 : 0;
-    let time = 0 + mod;
+    let time = -2;
 
     let currentNode = cNode;
     for (let i = 0; i < activeTiles.length + mod; i++) {
-      const nextNode = nodeArray.find(
-        (node) => node.id === currentNode!.nextId
-      );
+      let nextNode = nodeArray.find((node) => node.id === currentNode!.nextId);
+
+      if (reverse) {
+        nextNode = nodeArray.find((node) => node.id === currentNode!.prevId);
+      }
 
       if (!nextNode) {
         throw new Error("Node not found");
       }
 
-      if (nextNode.blocked && nextNode.timer > time) {
+      if (nextNode.blocked && nextNode.timer >= time) {
         return false;
       }
       currentNode = nextNode;
@@ -225,26 +240,6 @@ function checkPath(info: SnakeGame): boolean | number {
     }
 
     return true;
-  }
-
-  function altRoute(): boolean | number {
-    const direction = "right";
-    const [nextX, nextY] = nextDirection(direction);
-    x += nextX;
-    y += nextY;
-    const nextNode = nodeArray.find((node) => node.x === x && node.y === y);
-    if (!nextNode || nextNode.blocked) {
-      return false;
-    }
-
-    const doesPathWork = checkHamiltonianCycle(nodeArray, nextNode, false);
-    console.log("Does path work: ", doesPathWork);
-
-    if (doesPathWork) {
-      return convertDirectionToRadians(direction);
-    }
-
-    return false;
   }
 }
 
@@ -307,42 +302,23 @@ function simulateAStarState(
 }
 
 // Converts direction to radians for the snakeGame to use
-function convertDirectionToRadians(
-  direction: string,
-  reverse: boolean = false
-) {
-  let radians = -1;
+function convertDirectionToRadians(direction: string): number {
   switch (direction) {
     case "up":
-      radians = Math.PI / 2;
-      break;
+      return Math.PI / 2;
     case "down":
-      radians = (3 * Math.PI) / 2;
-      break;
+      return (3 * Math.PI) / 2;
     case "left":
-      radians = Math.PI;
-      break;
+      return Math.PI;
     case "right":
-      radians = 0;
-      break;
+      return 0;
   }
 
-  if (reverse) {
-    radians += Math.PI;
-    if (radians > 2 * Math.PI) {
-      radians -= 2 * Math.PI;
-    }
-  }
-
-  if (radians === -1) {
-    throw new Error("Invalid direction  " + direction);
-  }
-
-  return radians;
+  throw new Error("Invalid direction");
 }
 
 // Converts radians to direction for this file to use
-function convertRadiansToDirection(radians: number) {
+function convertRadiansToDirection(radians: number): string {
   switch (radians) {
     case Math.PI / 2:
       return "up";
@@ -357,7 +333,7 @@ function convertRadiansToDirection(radians: number) {
   throw new Error("Invalid radians");
 }
 
-function nextDirection(direction: string) {
+function nextDirection(direction: string): number[] {
   let x = 0;
   let y = 0;
 
@@ -377,4 +353,23 @@ function nextDirection(direction: string) {
   }
 
   return [x, y];
+}
+
+function reverseDirection(currentNode: Node): Direction {
+  const prevNode = nodeArray.find((node) => node.id === currentNode.prevId);
+  const [x, y] = [prevNode!.x - currentNode.x, prevNode!.y - currentNode.y];
+  switch (x) {
+    case 1:
+      return "right";
+    case -1:
+      return "left";
+  }
+  switch (y) {
+    case 1:
+      return "down";
+    case -1:
+      return "up";
+  }
+
+  throw new Error("Invalid direction");
 }
