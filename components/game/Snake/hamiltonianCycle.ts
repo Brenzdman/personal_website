@@ -1,3 +1,4 @@
+import { makeNewPath } from "./AStar";
 import { SnakeGame } from "./SnakeGame";
 
 class Node {
@@ -9,6 +10,7 @@ class Node {
     nextDirection: any,
     public id: number,
     public nextId: number = -1,
+    public prevId: number = -1,
     public blocked: boolean = false,
     public timer: number = 0
   ) {
@@ -19,7 +21,9 @@ class Node {
   }
 }
 
+let aStarDirections: number[] = [];
 let nodeArray: Node[] = [];
+let movingInReverse = false;   
 
 export function createHamiltonianCycle(info: SnakeGame) {
   const grid = info.grid;
@@ -64,6 +68,7 @@ export function createHamiltonianCycle(info: SnakeGame) {
     // Sets prev nodeId to info node
     if (nodeArray.length > 0) {
       nodeArray[nodeArray.length - 1].nextId = node.id;
+      node.prevId = nodeArray[nodeArray.length - 1].id;
     }
 
     nodeArray.push(node);
@@ -71,6 +76,7 @@ export function createHamiltonianCycle(info: SnakeGame) {
     // Sets final node to point to the first node
     if (nodeArray.length === width * height) {
       nodeArray[nodeArray.length - 1].nextId = 0;
+      nodeArray[0].prevId = nodeArray.length - 1;
       break;
     }
 
@@ -146,117 +152,193 @@ function updateBlockedTiles(info: SnakeGame) {
 
 // checks if the snake can skip ahead in the cycle
 function shortcutPath(info: SnakeGame): number | undefined {
-  // closest direction to the apple heuristically in radians
-  const bestDirection = getBestDirection(info);
-  console.log("Best direction: ", bestDirection);
-  const checkDirection = convertRadiansToDirection(bestDirection);
-  console.log("Go: ", checkDirection);
+  if (aStarDirections.length > 0) {
+    return aStarDirections.shift();
+  }
 
-  if (checkPath(info, checkDirection)) {
-    console.log("returning shortcut: ", bestDirection);
-    return bestDirection;
+  let response = checkPath(info);
+
+  if (response === true) {
+    return aStarDirections.shift();
   }
 
   console.log("Can't shortcut");
 }
 
 // checks to see if shortcut will cut snake off from hamiltonian cycle
-function checkPath(info: SnakeGame, checkDirection: string): boolean {
-  updateBlockedTiles(info);
-  const snake = info.snake;
-  const head = snake.head;
-  const activeTiles = snake.activeTiles;
+function checkPath(info: SnakeGame): boolean | number {
+  const aStarPath = makeNewPath(info);
+  const [simulatedNode, simulatedNodeArray]: [
+    Node | undefined,
+    Node[] | undefined
+  ] = simulateAStarState(info, aStarPath);
 
-  let x = head.x;
-  let y = head.y;
+  if (!simulatedNode || !simulatedNodeArray) {
+    return false;
+  }
 
-  // This is assuming we make this move, meaning 1 tick has passed
-  let time = 0;
+  const activeTiles = info.snake.activeTiles;
+  let x = simulatedNode.x;
+  let y = simulatedNode.y;
 
-  const [nextX, nextY] = nextDirection(checkDirection);
-  x += nextX;
-  y += nextY;
-
-  // Gets node based of hypothetical direction
-  let currentNode = nodeArray.find((node) => node.x === x && node.y === y);
+  // Gets node based of hypothetical path
+  let currentNode = simulatedNodeArray.find(
+    (node) => node.x === x && node.y === y
+  );
 
   if (!currentNode) {
     throw new Error("Node not found");
   }
 
   // Checks if snake can easily reach the Hamiltonian cycle after this shortcut
-  for (let i = 0; i < activeTiles.length; i++) {
-    const nextNode = nodeArray.find((node) => node.id === currentNode!.nextId);
 
-    if (!nextNode) {
+  if (checkHamiltonianCycle(simulatedNodeArray, currentNode, true)) {
+    aStarDirections = aStarPath;
+    return true;
+  } else {
+    return altRoute();
+  }
+
+  function checkHamiltonianCycle(
+    nodeArray: Node[],
+    cNode: Node,
+    preMove: boolean
+  ): boolean {
+    let mod = preMove ? 1 : 0;
+    let time = 0 + mod;
+
+    let currentNode = cNode;
+    for (let i = 0; i < activeTiles.length + mod; i++) {
+      const nextNode = nodeArray.find(
+        (node) => node.id === currentNode!.nextId
+      );
+
+      if (!nextNode) {
+        throw new Error("Node not found");
+      }
+
+      if (nextNode.blocked && nextNode.timer > time) {
+        return false;
+      }
+      currentNode = nextNode;
+      time++;
+    }
+
+    return true;
+  }
+
+  function altRoute(): boolean | number {
+    const direction = "right";
+    const [nextX, nextY] = nextDirection(direction);
+    x += nextX;
+    y += nextY;
+    const nextNode = nodeArray.find((node) => node.x === x && node.y === y);
+    if (!nextNode || nextNode.blocked) {
+      return false;
+    }
+
+    const doesPathWork = checkHamiltonianCycle(nodeArray, nextNode, false);
+    console.log("Does path work: ", doesPathWork);
+
+    if (doesPathWork) {
+      return convertDirectionToRadians(direction);
+    }
+
+    return false;
+  }
+}
+
+function simulateAStarState(
+  info: SnakeGame,
+  aStarPath: number[]
+): [Node | undefined, Node[] | undefined] {
+  updateBlockedTiles(info);
+
+  const snake = info.snake;
+  const head = snake.head;
+
+  if (aStarPath.length === 0) {
+    return [undefined, undefined];
+  }
+
+  let x = head.x;
+  let y = head.y;
+  let time = 0;
+
+  let simulatedNodeArray: Node[] = [];
+  Object.assign(simulatedNodeArray, nodeArray);
+
+  aStarPath.forEach((dir) => {
+    const direction = convertRadiansToDirection(dir);
+    const [nextX, nextY] = nextDirection(direction);
+    x += nextX;
+    y += nextY;
+
+    const node = simulatedNodeArray.find(
+      (node) => node.x === x && node.y === y
+    );
+    if (!node) {
       throw new Error("Node not found");
     }
 
-    if (nextNode.blocked && nextNode.timer > time) {
-      return false;
+    node.blocked = true;
+    node.timer = snake.activeTiles.length + time + 1;
+    time += 1;
+  });
+
+  // reduces the time of the blocked tiles
+  simulatedNodeArray.forEach((node) => {
+    if (node.blocked) {
+      node.timer -= time;
     }
-    currentNode = nextNode;
-    time++;
+    if (node.timer < 0) {
+      node.blocked = false;
+      node.timer = 0;
+    }
+  });
+
+  // current state of noteArray is the simulated state, to reset simply updateBlockedTiles
+  const finalNode = nodeArray.find((node) => node.x === x && node.y === y);
+  if (!finalNode) {
+    throw new Error("Node not found");
   }
 
-  return true;
-}
-
-// Functions that communicate with the snake game to determine the "fastest" direction to the apple
-function getBestDirection(info: SnakeGame) {
-  let bestDirection = info.snake.naturalDirection;
-  let bestScore = -Infinity;
-
-  for (let i = 0; i < 4; i++) {
-    const direction = (i * Math.PI) / 2;
-    const score = getDirectionScore(direction, info);
-    if (score > bestScore) {
-      bestScore = score;
-      bestDirection = direction;
-    }
-  }
-
-  return bestDirection;
-}
-
-function getDirectionScore(direction: number, info: SnakeGame) {
-  const applePos: [number, number] = [info.apple.x, info.apple.y];
-
-  // If collision is imminent in that direction
-  if (info.snake.isDangerAhead(direction)) return -Infinity;
-
-  const nextTile = info.snake.getNextTileID(direction);
-  const nextTilePos: [number, number] = [nextTile.x, nextTile.y];
-  const distance = getHeuristicCost(nextTilePos, applePos);
-
-  const score = 1 / distance;
-  return score;
-}
-
-// Get's "bird's eye view" of the cost of the path to the apple
-function getHeuristicCost(
-  pos1: [number, number],
-  pos2: [number, number]
-): number {
-  return Math.sqrt(
-    Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
-  );
+  return [finalNode, simulatedNodeArray];
 }
 
 // Converts direction to radians for the snakeGame to use
-function convertDirectionToRadians(direction: string) {
+function convertDirectionToRadians(
+  direction: string,
+  reverse: boolean = false
+) {
+  let radians = -1;
   switch (direction) {
     case "up":
-      return Math.PI / 2;
+      radians = Math.PI / 2;
+      break;
     case "down":
-      return (3 * Math.PI) / 2;
+      radians = (3 * Math.PI) / 2;
+      break;
     case "left":
-      return Math.PI;
+      radians = Math.PI;
+      break;
     case "right":
-      return 0;
+      radians = 0;
+      break;
   }
 
-  throw new Error("Invalid direction");
+  if (reverse) {
+    radians += Math.PI;
+    if (radians > 2 * Math.PI) {
+      radians -= 2 * Math.PI;
+    }
+  }
+
+  if (radians === -1) {
+    throw new Error("Invalid direction  " + direction);
+  }
+
+  return radians;
 }
 
 // Converts radians to direction for this file to use

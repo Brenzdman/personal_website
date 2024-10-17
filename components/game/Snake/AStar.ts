@@ -176,7 +176,7 @@ export function makeNewPath(info: SnakeGame): number[] {
     currentNode.y !== endPos[1]
   ) {
     console.warn("No path found, implementing fallback direction");
-    return getFallbackDirection(snake, info.grid);
+    return [];
   }
 
   return tracePath(currentNode);
@@ -203,7 +203,7 @@ export function makeNewPath(info: SnakeGame): number[] {
       const currentPos: [number, number] = [path[i].x, path[i].y];
       const nextPos: [number, number] = [path[i + 1].x, path[i + 1].y];
 
-      info.grid.gridTiles[nextPos[0]][nextPos[1]].color = "#00ff00";
+      // info.grid.gridTiles[nextPos[0]][nextPos[1]].color = "#00ff00";
       // info.grid.gridTiles[apple.x][apple.y].color = "#ffffff";
 
       const direction = getDirectionFromPosition(currentPos, nextPos);
