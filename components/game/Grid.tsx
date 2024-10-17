@@ -8,10 +8,7 @@ export class Grid {
   public standardTileBackgroundColor = "#2b80b9";
   public draw = true;
 
-  constructor(
-    public gridTilesX: number,
-    public gridTilesY: number,
-  ) {
+  constructor(public gridTilesX: number, public gridTilesY: number) {
     this.init();
   }
 
@@ -30,6 +27,57 @@ export class Grid {
       newGridTiles[i] = row;
     }
     this.gridTiles = newGridTiles;
+  }
+
+  drawLineBetweenTiles(tile1: TileID, tile2: TileID) {
+    if (!this.draw) return;
+
+    const canvasId = "snakeCanvas";
+    const border = 0.1;
+
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
+      console.error("Canvas not found!");
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      console.error("Unable to get canvas context!");
+      return;
+    }
+
+    // How large the tiles are, and how to position them relative to the canvas
+
+    let tileWidth: number, width: number;
+    let sideBorder: number;
+    if (canvas.height > canvas.width) {
+      sideBorder = canvas.width * border;
+      width = canvas.width - 2 * sideBorder;
+      tileWidth = width / (this.gridTilesX - 2);
+    } else {
+      sideBorder = canvas.height * border;
+      width = canvas.height - 2 * sideBorder;
+      tileWidth = width / this.gridTilesY;
+    }
+
+    // For each tile, draws tile
+    const sideBorderX = (canvas.width - tileWidth * this.gridTilesX) / 2;
+
+    // Draws the line between the tiles
+    context.beginPath();
+    context.strokeStyle = "black";
+    context.lineWidth = 2;
+    context.moveTo(
+      tile1.x * tileWidth + sideBorderX + tileWidth / 2,
+      tile1.y * tileWidth + sideBorder + tileWidth / 2
+    );
+
+    context.lineTo(
+      tile2.x * tileWidth + sideBorderX + tileWidth / 2,
+      tile2.y * tileWidth + sideBorder + tileWidth / 2
+    );
+    context.stroke();
   }
 
   drawGrid(canvasId: string, border: number = 0) {
@@ -54,11 +102,11 @@ export class Grid {
     if (canvas.height > canvas.width) {
       sideBorder = canvas.width * border;
       width = canvas.width - 2 * sideBorder;
-      tileWidth = width / (this.gridTilesX - 2 );
+      tileWidth = width / (this.gridTilesX - 2);
     } else {
       sideBorder = canvas.height * border;
       width = canvas.height - 2 * sideBorder;
-      tileWidth = width / (this.gridTilesY);
+      tileWidth = width / this.gridTilesY;
     }
 
     // For each tile, draws tile

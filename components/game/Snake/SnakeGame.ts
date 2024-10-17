@@ -3,7 +3,11 @@
 import { GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
-import { makeNewPath } from "./AStar";
+import {
+  drawHamiltonianCycle,
+  createHamiltonianCycle,
+  getHamiltonianDirection,
+} from "./hamiltonianCycle";
 import { Snake } from "./Snake";
 
 export class SnakeGame {
@@ -27,6 +31,7 @@ export class SnakeGame {
     this.nextDirection = undefined;
     this.subsequentDirection = undefined;
     this.speed = GAME_SPEED;
+    createHamiltonianCycle(this);
   }
 
   handleResize = () => {
@@ -51,20 +56,22 @@ export class SnakeGame {
     }
 
     this.grid.drawGrid("snakeCanvas", 0.1);
+    drawHamiltonianCycle(this);
   }
 
   managePlayerSnake() {
     if (this.AI && this.AI_directions.length === 0 && !this.AI_dead) {
-      this.AI_directions = makeNewPath(this);
+      // this.AI_directions = makeNewPath(this);
     }
 
     if (this.tickNumber % this.speed == 0) {
       if (this.AI) {
-        const direction = this.AI_directions.shift();
+        this.snake.direction = getHamiltonianDirection(this);
+        // const direction = this.AI_directions.shift();
 
-        if (direction !== undefined) {
-          this.snake.direction = direction;
-        }
+        // if (direction !== undefined) {
+        //   this.snake.direction = direction;
+        // }
       } else {
         if (this.nextDirection !== undefined) {
           this.snake.direction = this.nextDirection;
@@ -85,45 +92,6 @@ export class SnakeGame {
       this.snake.moveSnake();
     }
   }
-
-  // getBestDirection() {
-  //   let bestDirection = this.snake.naturalDirection;
-  //   let bestScore = -Infinity;
-
-  //   for (let i = 0; i < 4; i++) {
-  //     const direction = (i * Math.PI) / 2;
-  //     const score = this.getDirectionScore(direction);
-  //     if (score > bestScore) {
-  //       bestScore = score;
-  //       bestDirection = direction;
-  //     }
-  //   }
-
-  //   return bestDirection;
-  // }
-
-  // getDirectionScore(direction: number) {
-  //   const applePos = [this.apple.x, this.apple.y];
-
-  //   // Tiles that have a snake on them
-  //   const snakeTiles = this.snake.activeTiles.map((tile) => [tile.x, tile.y]);
-
-  //   // If collision is imminent in that direction
-  //   if (this.snake.isDangerAhead(direction)) return -Infinity;
-
-  //   const nextTile = this.snake.getNextTileID(direction);
-  //   const nextTilePos = [nextTile.x, nextTile.y];
-  //   const distance = this.getDistance(nextTilePos, applePos);
-
-  //   const score = 1 / distance;
-  //   return score;
-  // }
-
-  // getDistance(pos1: number[], pos2: number[]) {
-  //   return Math.sqrt(
-  //     Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
-  //   );
-  // }
 
   handleSnakeKeyDown = (e: KeyboardEvent) => {
     if (this.AI) return;
