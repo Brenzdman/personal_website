@@ -1,5 +1,6 @@
 import { makeNewPath } from "./AStar";
 import { SnakeGame } from "./SnakeGame";
+import { generateHamiltonianCycle, posToDir } from "./spanningTree";
 
 type Direction = "up" | "down" | "left" | "right";
 class Node {
@@ -31,65 +32,33 @@ export function createHamiltonianCycle(info: SnakeGame) {
   const width = grid.gridTilesX;
   const height = grid.gridTilesY;
 
-  const start = [0, 0];
-  let numIterations = 0;
-  const maxIterations = width * height;
+  const treeNodes = generateHamiltonianCycle(width / 2, height / 2);
+  let cycleArray: Node[] = [];
 
-  let x = start[0];
-  let y = start[1];
+  for (let i = 0; i < treeNodes.length; i++) {
+    const treeNode = treeNodes[i];
+    const nextNode = treeNodes[(i + 1) % treeNodes.length];
+    const prevNode = treeNodes[(i - 1 + treeNodes.length) % treeNodes.length];
 
-  // Clear the previous node array before creating a new cycle
-  nodeArray = [];
+    const nextDirection = posToDir(
+      treeNode.x,
+      treeNode.y,
+      nextNode.x,
+      nextNode.y
+    );
 
-  while (numIterations < maxIterations) {
-    let mainDirection: Direction;
-
-    // Determine the snake's direction based on the position
-    if (x !== 0 && y === 0) {
-      mainDirection = "left";
-    } else if ((x % 2 === 0 && y === height - 1) || (x % 2 === 1 && y === 1)) {
-      mainDirection = "right";
-    } else {
-      mainDirection = x % 2 === 0 ? "down" : "up";
-    }
-
-    // Handle upper-right corner to avoid getting stuck
-    if (x === width - 1 && y === 1) {
-      mainDirection = "up";
-    }
-
-    // Make sure x and y are within bounds
-    if (x < 0 || x >= width || y < 0 || y >= height) {
-      throw new Error(`Invalid node coordinates: (${x}, ${y})`);
-    }
-
-    // Create new node
-    const node = new Node(x, y, mainDirection, nodeArray.length);
-
-    // Link previous node to the current node
-    if (nodeArray.length > 0) {
-      nodeArray[nodeArray.length - 1].nextId = node.id;
-      node.prevId = nodeArray[nodeArray.length - 1].id;
-    }
-
-    nodeArray.push(node);
-
-    // Final node should point to the first node to complete the cycle
-    if (nodeArray.length === maxIterations) {
-      nodeArray[nodeArray.length - 1].nextId = 0;
-      nodeArray[0].prevId = nodeArray.length - 1;
-      break;
-    }
-
-    const [nextX, nextY] = nextDirection(mainDirection);
-    x += nextX;
-    y += nextY;
-    numIterations++;
+    const newNode = new Node(
+      treeNode.x,
+      treeNode.y,
+      nextDirection,
+      i,
+      (i + 1) % treeNodes.length,
+      (i - 1 + treeNodes.length) % treeNodes.length
+    );
+    cycleArray.push(newNode);
   }
 
-  if (nodeArray.length !== maxIterations) {
-    throw new Error("Failed to create a full Hamiltonian cycle.");
-  }
+  nodeArray = cycleArray;
 }
 
 export function drawHamiltonianCycle(info: SnakeGame) {
@@ -172,6 +141,14 @@ function shortcutPath(info: SnakeGame): number | undefined {
 
 // checks to see if shortcut will cut snake off from hamiltonian cycle
 function checkPath(info: SnakeGame): boolean {
+  const activeTiles = info.snake.activeTiles;
+  const grid = info.grid;
+
+  // If the snake is too close to the end the game, don't shortcut as it makes empty tiles
+  if (activeTiles.length > (grid.gridTilesX * grid.gridTilesY * 7) / 10) {
+    return false;
+  }
+
   const aStarPath = makeNewPath(info);
   const [simulatedNode, simulatedNodeArray]: [
     Node | undefined,
@@ -182,7 +159,6 @@ function checkPath(info: SnakeGame): boolean {
     return false;
   }
 
-  const activeTiles = info.snake.activeTiles;
   let x = simulatedNode.x;
   let y = simulatedNode.y;
 

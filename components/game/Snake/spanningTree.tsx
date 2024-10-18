@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 type Edge = [number, number, number];
 
-class Node {
+class TreeNode {
   x: number;
   y: number;
   connections: [number, number][] = [];
@@ -19,7 +19,7 @@ class Node {
   }
 }
 
-const WIDTH = 5;
+const WIDTH = 25;
 const HEIGHT = 5;
 
 function makeSet(parent: number[], rank: number[], n: number) {
@@ -49,18 +49,19 @@ function unionSet(u: number, v: number, parent: number[], rank: number[]) {
 }
 
 function spanningTree(
-  n: number,
+  rows: number,
+  cols: number,
   edges: Edge[]
-): { nodes: Node[]; minCost: number } {
+): { nodes: TreeNode[]; minCost: number } {
   edges.sort((a, b) => a[2] - b[2]);
 
-  const parent = new Array(n);
-  const rank = new Array(n);
-  makeSet(parent, rank, n);
+  const parent = new Array(rows * cols);
+  const rank = new Array(rows * cols);
+  makeSet(parent, rank, rows * cols);
 
-  const nodes: Node[] = Array.from(
-    { length: n },
-    (_, i) => new Node(Math.floor(i / Math.sqrt(n)), i % Math.sqrt(n))
+  const nodes: TreeNode[] = Array.from(
+    { length: rows * cols },
+    (_, i) => new TreeNode(Math.floor(i / cols), i % cols) // Use cols for x/y calculation
   );
   let minCost = 0;
 
@@ -80,29 +81,27 @@ function spanningTree(
   return { nodes, minCost };
 }
 
-function scaleUpNodes(nodes: Node[]): Node[] {
-  let scaledNodes: Node[] = [];
+function scaleUpNodes(nodes: TreeNode[]): TreeNode[] {
+  let scaledNodes: TreeNode[] = [];
 
   // Initialize scaled nodes
   for (let i = 0; i < WIDTH * 2; i++) {
     for (let j = 0; j < HEIGHT * 2; j++) {
-      scaledNodes.push(new Node(i, j));
+      scaledNodes.push(new TreeNode(i, j));
     }
   }
 
-  nodes.forEach((node, index) => {
+  nodes.forEach((node) => {
     // Get the connected nodes and their directions
     const connectedNodes = node.connections;
     const connectedDirections = connectedNodes.map(([x, y]) =>
       posToDir(node.x, node.y, x, y)
     );
 
-    console.log(node.x, node.y, connectedDirections);
-
     // Get the scaled node indexes
     const scaledNodeIndexes = getScaledNodeIndexes(node);
 
-    //Primary four nodes
+    // Primary four nodes
     const upLeft = scaledNodes.find(
       (n) => n.x === scaledNodeIndexes[0][0] && n.y === scaledNodeIndexes[0][1]
     )!;
@@ -134,8 +133,7 @@ function scaleUpNodes(nodes: Node[]): Node[] {
       downRight.addProperConnection(upRight.x, upRight.y);
     }
 
-    // add connections to outer nodes
-
+    // Add connections to outer nodes
     if (connectedDirections.includes("up")) {
       const upUpLeft = scaledNodes.find(
         (n) =>
@@ -205,7 +203,7 @@ function scaleUpNodes(nodes: Node[]): Node[] {
     }
   });
 
-  // remove duplicate connections
+  // Remove duplicate connections
   scaledNodes.forEach((node) => {
     node.connections = node.connections.filter(
       ([x, y], index, self) =>
@@ -216,7 +214,7 @@ function scaleUpNodes(nodes: Node[]): Node[] {
   return scaledNodes;
 }
 
-function getScaledNodeIndexes(node: Node): [number, number][] {
+function getScaledNodeIndexes(node: TreeNode): [number, number][] {
   // [2x,2y], [2x+1, 2y], [2x, 2y+1], [2x+1, 2y+1]
 
   const scaledX = node.x * 2;
@@ -230,7 +228,12 @@ function getScaledNodeIndexes(node: Node): [number, number][] {
   ];
 }
 
-function posToDir(x1: number, y1: number, x2: number, y2: number): string {
+export function posToDir(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): string {
   // 1 -> start, 2 -> end position
   if (x1 === x2 && y1 === y2 + 1) return "up";
   if (x1 === x2 && y1 === y2 - 1) return "down";
@@ -255,16 +258,61 @@ const generateGridEdges = (rows: number, cols: number): Edge[] => {
   return edges;
 };
 
+export function generateHamiltonianCycle(
+  rows: number,
+  cols: number
+): TreeNode[] {
+  const edges = generateGridEdges(rows, cols);
+  const { nodes } = spanningTree(WIDTH, HEIGHT, edges);
+  const scaledNodes = scaleUpNodes(nodes);
+
+  let cycle: TreeNode[] = [];
+  let currentNode = scaledNodes[0];
+  let nextNode = currentNode.connections[0];
+
+  while (currentNode.connections.length > 0) {
+    cycle.push(currentNode);
+    removeConnection(currentNode, nextNode[0], nextNode[1]);
+    currentNode = scaledNodes.find(
+      (n) => n.x === nextNode[0] && n.y === nextNode[1]
+    )!;
+    nextNode = currentNode.connections[0];
+  }
+
+  // Removes the connection between nodes
+  function removeConnection(node: TreeNode, x: number, y: number) {
+    const otherNode = scaledNodes.find((n) => n.x === x && n.y === y)!;
+    otherNode.connections = otherNode.connections.filter(
+      ([nx, ny]) => nx !== node.x || ny !== node.y
+    );
+    node.connections = node.connections.filter(
+      ([nx, ny]) => nx !== x || ny !== y
+    );
+  }
+
+  // Add connections back in going in 1 direction
+  for (let i = 0; i < cycle.length - 1; i++) {
+    cycle[i].addProperConnection(cycle[i + 1].x, cycle[i + 1].y);
+  }
+  cycle[cycle.length - 1].addProperConnection(cycle[0].x, cycle[0].y);
+
+  return cycle;
+}
+
 const SpanningTree: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [edges] = useState<Edge[]>(generateGridEdges(WIDTH, HEIGHT));
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [scaledNodes, setScaledNodes] = useState<Node[]>([]);
+  const [nodes, setNodes] = useState<TreeNode[]>([]);
+  const [scaledNodes, setScaledNodes] = useState<TreeNode[]>([]);
   const [minCost, setMinCost] = useState<number>(0);
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
 
+  // Set the canvas dimensions
+  const canvasWidth = 800;
+  const canvasHeight = 800;
+
   useEffect(() => {
-    const { nodes, minCost } = spanningTree(WIDTH * HEIGHT, edges);
+    const { nodes, minCost } = spanningTree(WIDTH, HEIGHT, edges);
     if (!hasGenerated) {
       setNodes(nodes);
       setMinCost(minCost);
@@ -281,16 +329,17 @@ const SpanningTree: React.FC = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = "green";
 
-        const cellWidth = canvas.width / HEIGHT;
-        const cellHeight = canvas.height / WIDTH;
+        // Use maxDimension to ensure square tiles
+        const maxDimension = Math.max(WIDTH, HEIGHT);
+        const tileSize = Math.min(canvas.width, canvas.height) / maxDimension;
 
         // Draw original nodes and connections in green
         nodes.forEach((node) => {
           node.connections.forEach(([x, y]) => {
-            const x1 = node.x * cellWidth + cellWidth / 2;
-            const y1 = node.y * cellHeight + cellHeight / 2;
-            const x2 = x * cellWidth + cellWidth / 2;
-            const y2 = y * cellHeight + cellHeight / 2;
+            const x1 = node.x * tileSize + tileSize / 2;
+            const y1 = node.y * tileSize + tileSize / 2;
+            const x2 = x * tileSize + tileSize / 2;
+            const y2 = y * tileSize + tileSize / 2;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
@@ -300,15 +349,14 @@ const SpanningTree: React.FC = () => {
 
         // Draw scaled-up nodes and connections in red
         ctx.strokeStyle = "red";
-        const scaledCellWidth = canvas.width / (HEIGHT * 2);
-        const scaledCellHeight = canvas.height / (WIDTH * 2);
+        const scaledTileSize = tileSize / 2;
 
         scaledNodes.forEach((node) => {
           node.connections.forEach(([x, y]) => {
-            const x1 = node.x * scaledCellWidth + scaledCellWidth / 2;
-            const y1 = node.y * scaledCellHeight + scaledCellHeight / 2;
-            const x2 = x * scaledCellWidth + scaledCellWidth / 2;
-            const y2 = y * scaledCellHeight + scaledCellHeight / 2;
+            const x1 = node.x * scaledTileSize + scaledTileSize / 2;
+            const y1 = node.y * scaledTileSize + scaledTileSize / 2;
+            const x2 = x * scaledTileSize + scaledTileSize / 2;
+            const y2 = y * scaledTileSize + scaledTileSize / 2;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
@@ -317,9 +365,9 @@ const SpanningTree: React.FC = () => {
         });
       }
     }
-  }, [nodes, scaledNodes, minCost, WIDTH, HEIGHT]);
+  }, [nodes, scaledNodes, minCost]);
 
-  return <canvas ref={canvasRef} width={800} height={800} />;
+  return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} />;
 };
 
 export default SpanningTree;

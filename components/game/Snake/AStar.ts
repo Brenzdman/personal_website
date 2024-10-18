@@ -175,7 +175,6 @@ export function makeNewPath(info: SnakeGame): number[] {
     currentNode.x !== endPos[0] ||
     currentNode.y !== endPos[1]
   ) {
-    console.warn("No path found, implementing fallback direction");
     return [];
   }
 

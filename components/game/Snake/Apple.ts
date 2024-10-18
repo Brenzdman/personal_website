@@ -29,8 +29,12 @@ export class Apple {
     tile.color = APPLE_COLOR;
   }
 
-  generateApple() {
+  generateApple(length: number = 1) {
     // Generates new location on the visible grid
+    if (length > this.grid.gridTilesX * this.grid.gridTilesY - 1) {
+      return;
+    }
+
     const availablePositions: { x: number; y: number }[] = [];
 
     // Makes sure there is only one apple
