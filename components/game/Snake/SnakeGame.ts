@@ -1,7 +1,5 @@
 "use client";
 
-import { ref } from "firebase/database";
-import { useRef, useEffect } from "react";
 import { GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
@@ -88,7 +86,7 @@ export class SnakeGame {
           console.warn("Danger ahead, cya");
           console.warn("Direction: ", this.snake.direction);
         }
-        return;
+        // return;
       }
 
       this.snake.moveSnake();

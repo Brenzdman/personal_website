@@ -84,8 +84,8 @@ export class Snake {
     if (tile.type === this.apple?.tileType) {
       // looking ahead vs moving
       if (this.apple && !check) {
-        this.apple.generateApple(this.length);
-        if (this.length >= this.grid.gridTilesX * this.grid.gridTilesY - 1) {
+        this.apple.generateApple();
+        if (this.length >= this.grid.gridTilesX * this.grid.gridTilesY) {
           return true;
         }
 
