@@ -394,7 +394,7 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ onClick }) => {
 
     canvas.width = document.documentElement.clientWidth;
 
-    if (!window.innerHeight) return;
+    if (!window) return;
     canvas.height = window.innerHeight * 0.4;
 
     const newWidth = Math.floor(canvas.width / 50);

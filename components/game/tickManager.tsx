@@ -1,7 +1,7 @@
 "use client";
 
-// Tick manager for main Serpentris game
-// Manages game time and USER input
+// Tick manager for main Snake game
+// Manages game time and user input
 // Can't be used elsewhere
 
 import { useEffect } from "react";
