@@ -1,5 +1,7 @@
 "use client";
 
+import { ref } from "firebase/database";
+import { useRef, useEffect } from "react";
 import { GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
@@ -144,3 +146,4 @@ export class SnakeGame {
     }
   };
 }
+

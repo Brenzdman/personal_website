@@ -31,8 +31,6 @@ export function createHamiltonianCycle(info: SnakeGame) {
   const width = grid.gridTilesX;
   const height = grid.gridTilesY;
 
-  // Makes a trivial Hamiltonian cycle
-
   const start = [0, 0];
   let numIterations = 0;
   const maxIterations = width * height;
@@ -40,33 +38,35 @@ export function createHamiltonianCycle(info: SnakeGame) {
   let x = start[0];
   let y = start[1];
 
-  while (numIterations < maxIterations) {
-    let mainDirection;
+  // Clear the previous node array before creating a new cycle
+  nodeArray = [];
 
-    // Top Row
-    if (x != 0 && y == 0) {
+  while (numIterations < maxIterations) {
+    let mainDirection: Direction;
+
+    // Determine the snake's direction based on the position
+    if (x !== 0 && y === 0) {
       mainDirection = "left";
+    } else if ((x % 2 === 0 && y === height - 1) || (x % 2 === 1 && y === 1)) {
+      mainDirection = "right";
     } else {
-      // Determines the direction of the snake
-      if ((x % 2 === 0 && y == height - 1) || (x % 2 === 1 && y == 1)) {
-        mainDirection = "right";
-      } else {
-        if (x % 2 === 0) {
-          mainDirection = "down";
-        } else {
-          mainDirection = "up";
-        }
-      }
+      mainDirection = x % 2 === 0 ? "down" : "up";
     }
 
-    // Upper Right Corner
-    if (x == width - 1 && y == 1) {
+    // Handle upper-right corner to avoid getting stuck
+    if (x === width - 1 && y === 1) {
       mainDirection = "up";
     }
 
+    // Make sure x and y are within bounds
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+      throw new Error(`Invalid node coordinates: (${x}, ${y})`);
+    }
+
+    // Create new node
     const node = new Node(x, y, mainDirection, nodeArray.length);
 
-    // Sets prev nodeId to info node
+    // Link previous node to the current node
     if (nodeArray.length > 0) {
       nodeArray[nodeArray.length - 1].nextId = node.id;
       node.prevId = nodeArray[nodeArray.length - 1].id;
@@ -74,8 +74,8 @@ export function createHamiltonianCycle(info: SnakeGame) {
 
     nodeArray.push(node);
 
-    // Sets final node to point to the first node
-    if (nodeArray.length === width * height) {
+    // Final node should point to the first node to complete the cycle
+    if (nodeArray.length === maxIterations) {
       nodeArray[nodeArray.length - 1].nextId = 0;
       nodeArray[0].prevId = nodeArray.length - 1;
       break;
@@ -84,8 +84,11 @@ export function createHamiltonianCycle(info: SnakeGame) {
     const [nextX, nextY] = nextDirection(mainDirection);
     x += nextX;
     y += nextY;
-
     numIterations++;
+  }
+
+  if (nodeArray.length !== maxIterations) {
+    throw new Error("Failed to create a full Hamiltonian cycle.");
   }
 }
 
@@ -158,16 +161,13 @@ function updateBlockedTiles(info: SnakeGame) {
 
 // checks if the snake can skip ahead in the cycle
 function shortcutPath(info: SnakeGame): number | undefined {
-  if (aStarDirections.length > 0) {
-    return aStarDirections.shift();
-  }
-
   if (checkPath(info)) {
     return aStarDirections.shift();
+  } else {
+    if (aStarDirections.length > 0) {
+      return aStarDirections.shift();
+    }
   }
-
-  console.log("moving in reverse: ", movingInReverse);
-  console.log("Can't shortcut");
 }
 
 // checks to see if shortcut will cut snake off from hamiltonian cycle
