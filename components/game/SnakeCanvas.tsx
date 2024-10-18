@@ -26,10 +26,7 @@ export function SnakeCanvas() {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <SpanningTree
-        width={50 / 2}
-        height={10 / 2}
-      />
+      <SpanningTree width={50} height={10} />
       <div
         style={{
           position: "absolute",

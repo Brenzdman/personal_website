@@ -312,14 +312,21 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
 
   // Redraw function to clear the canvas and redraw the tree
-  const redrawCanvas = (
-    ctx: CanvasRenderingContext2D,
-    tileSize: number,
-    scaledTileSize: number
-  ) => {
+  const drawCanvas = () => {
     const canvas = canvasRef.current;
 
     if (!canvas) return;
+
+    const ctx = canvas.getContext("2d")!;
+
+    const maxDimension = Math.max(width, height);
+    const tileSize = Math.max(canvas.width, canvas.height) / maxDimension;
+    const scaledTileSize = tileSize / 2;
+
+    console.log("Drawing canvas");
+    console.log("width", canvas.width);
+    console.log("height", canvas.height);
+
     // Set background to grey
     ctx.fillStyle = "#4a4a4a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -391,15 +398,10 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
       canvas.width = document.documentElement.clientWidth;
       canvas.height = window.innerHeight * 0.4;
 
-      const ctx = canvas.getContext("2d")!;
-
-      const maxDimension = Math.max(width, height);
-      const tileSize = Math.min(canvas.width, canvas.height) / maxDimension;
-      const scaledTileSize = tileSize / 2;
-
-      redrawCanvas(ctx, tileSize, scaledTileSize);
+      drawCanvas();
     };
     handleResize();
+    drawCanvas();
 
     window.addEventListener("resize", handleResize);
     return () => {
@@ -418,22 +420,7 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
     }
   }, [edges, hasGenerated]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        const maxDimension = Math.max(width, height);
-
-        const tileSize = Math.max(canvas.width, canvas.height) / maxDimension;
-        const scaledTileSize = tileSize / 2;
-
-        redrawCanvas(ctx, tileSize, scaledTileSize);
-      }
-    }
-  }, [nodes, scaledNodes, minCost]);
-
-  return <canvas ref={canvasRef} width={100} height={100} />;
+  return <canvas ref={canvasRef} />;
 };
 
 export default SpanningTree;
