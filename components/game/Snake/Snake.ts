@@ -13,7 +13,7 @@ export class Snake {
 
   public head: TileID = new TileID(this.spawnX, this.spawnY, this.grid);
 
-  public direction: number = Math.PI / 2; //rads from 0 to 2pi
+  public direction: number = 0 //rads from 0 to 2pi
   public naturalDirection: number = this.direction; //prevents 180 degree turns
   public activeTiles: TileID[] = [];
   public lives = 1;

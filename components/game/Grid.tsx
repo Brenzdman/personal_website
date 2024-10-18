@@ -47,40 +47,31 @@ export class Grid {
       return;
     }
 
-    // How large the tiles are, and how to position them relative to the canvas
+    // Calculate tile size and borders
+    const borderModif = 1 - border * 2;
+    const maxDimension = Math.max(this.gridTilesX, this.gridTilesY);
+    const tileSize =
+      Math.max(canvas.width * borderModif, canvas.height * borderModif) /
+      maxDimension;
+    const offsetX = (canvas.width - this.gridTilesX * tileSize) / 2;
+    const offsetY = (canvas.height - this.gridTilesY * tileSize) / 2;
 
-    let tileWidth: number, width: number;
-    let sideBorder: number;
-    if (canvas.height > canvas.width) {
-      sideBorder = canvas.width * border;
-      width = canvas.width - 2 * sideBorder;
-      tileWidth = width / (this.gridTilesX - 2);
-    } else {
-      sideBorder = canvas.height * border;
-      width = canvas.height - 2 * sideBorder;
-      tileWidth = width / this.gridTilesY;
-    }
-
-    // For each tile, draws tile
-    const sideBorderX = (canvas.width - tileWidth * this.gridTilesX) / 2;
-
-    // Draws the line between the tiles
+    // Draw the line between the tiles
     context.beginPath();
     context.strokeStyle = "black";
     context.lineWidth = 2;
     context.moveTo(
-      tile1.x * tileWidth + sideBorderX + tileWidth / 2,
-      tile1.y * tileWidth + sideBorder + tileWidth / 2
+      tile1.x * tileSize + offsetX + tileSize / 2,
+      tile1.y * tileSize + offsetY + tileSize / 2
     );
-
     context.lineTo(
-      tile2.x * tileWidth + sideBorderX + tileWidth / 2,
-      tile2.y * tileWidth + sideBorder + tileWidth / 2
+      tile2.x * tileSize + offsetX + tileSize / 2,
+      tile2.y * tileSize + offsetY + tileSize / 2
     );
     context.stroke();
   }
 
-  drawGrid(canvasId: string, border: number = 0) {
+  drawGrid(canvasId: string, border: number = 0.1) {
     if (!this.draw) return;
 
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -95,23 +86,17 @@ export class Grid {
       return;
     }
 
-    // How large the tiles are, and how to position them relative to the canvas
+    // Calculate tile size and borders
+    const borderModif = 1 - border * 2;
 
-    let tileWidth: number, width: number;
-    let sideBorder: number;
-    if (canvas.height > canvas.width) {
-      sideBorder = canvas.width * border;
-      width = canvas.width - 2 * sideBorder;
-      tileWidth = width / (this.gridTilesX - 2);
-    } else {
-      sideBorder = canvas.height * border;
-      width = canvas.height - 2 * sideBorder;
-      tileWidth = width / this.gridTilesY;
-    }
+    const maxDimension = Math.max(this.gridTilesX, this.gridTilesY);
+    const tileSize =
+      Math.max(canvas.width * borderModif, canvas.height * borderModif) /
+      maxDimension;
+    const offsetX = (canvas.width - this.gridTilesX * tileSize) / 2;
+    const offsetY = (canvas.height - this.gridTilesY * tileSize) / 2;
 
-    // For each tile, draws tile
-    const sideBorderX = (canvas.width - tileWidth * this.gridTilesX) / 2;
-
+    // Draw each tile
     for (let x = 0; x < this.gridTilesX; x++) {
       for (let y = 0; y < this.gridTilesY; y++) {
         const tile = this.gridTiles[x][y];
@@ -132,23 +117,23 @@ export class Grid {
         else if (tile.color !== this.standardTileColor)
           backgroundColor = darkenColor(tile.color) || backgroundColor;
 
-        // Draws the tile
+        // Draw the tile
         context.fillStyle = tileColor;
         context.fillRect(
-          tile.x * tileWidth + sideBorderX,
-          tile.y * tileWidth + sideBorder,
-          tileWidth,
-          tileWidth
+          x * tileSize + offsetX,
+          y * tileSize + offsetY,
+          tileSize,
+          tileSize
         );
 
-        // Draws the border of the tile
+        // Draw the border of the tile
         context.strokeStyle = backgroundColor;
         context.lineWidth = 2;
         context.strokeRect(
-          tile.x * tileWidth + sideBorderX,
-          tile.y * tileWidth + sideBorder,
-          tileWidth,
-          tileWidth
+          x * tileSize + offsetX,
+          y * tileSize + offsetY,
+          tileSize,
+          tileSize
         );
       }
     }

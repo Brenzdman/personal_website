@@ -1,6 +1,6 @@
 "use client";
 
-import { GAME_SPEED } from "../constants";
+import { AI_SPEED, GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
 import {
@@ -12,26 +12,39 @@ import { Snake } from "./Snake";
 
 export class SnakeGame {
   // Snake Variables
-  public grid: Grid;
+  public grid!: Grid;
   public AI: boolean = true;
   public AI_directions: number[] = [];
   public AI_dead: boolean = false;
-  public apple: Apple;
-  public snake: Snake;
-  public tickNumber: number;
+  public apple!: Apple;
+  public snake!: Snake;
+  public tickNumber!: number;
   public nextDirection: number | undefined;
   public subsequentDirection: number | undefined;
-  public speed: number;
+  public speed!: number;
 
   constructor() {
+    this.initializeGame();
+  }
+
+  private initializeGame() {
     this.grid = new Grid(50, 10);
     this.apple = new Apple(this.grid);
     this.snake = new Snake(this.grid, this.apple, 0);
     this.tickNumber = 0;
     this.nextDirection = undefined;
     this.subsequentDirection = undefined;
-    this.speed = GAME_SPEED;
+    this.AI = true;
+    this.speed = this.AI ? AI_SPEED : GAME_SPEED;
+    this.AI_directions = [];
+    this.AI_dead = false;
+    
+
     createHamiltonianCycle(this);
+  }
+
+  resetGame() {
+    this.initializeGame();
   }
 
   handleResize = () => {
@@ -80,13 +93,17 @@ export class SnakeGame {
         }
       }
 
-      if (this.AI && this.snake.isDangerAhead(this.snake.direction)) {
+      if (this.snake.isDangerAhead(this.snake.direction)) {
         if (!this.AI_dead) {
           this.AI_dead = true;
           console.warn("Danger ahead, cya");
           console.warn("Direction: ", this.snake.direction);
         }
-        // return;
+        console.log("setting timeout");
+        setTimeout(() => {
+          console.log("Resetting game");
+          this.resetGame();
+        }, 5000);
       }
 
       this.snake.moveSnake();

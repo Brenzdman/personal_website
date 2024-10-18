@@ -302,14 +302,17 @@ export function generateHamiltonianCycle(
 interface SpanningTreeProps {
   width: number;
   height: number;
+  onClick?: () => void;
 }
-const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
+
+const SpanningTree: React.FC<SpanningTreeProps> = ({ onClick }) => {
+  const [width, setWidth] = useState<number>(10);
+  const [height, setHeight] = useState<number>(10);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [edges] = useState<Edge[]>(generateGridEdges(width, height));
+  const [edges, setEdges] = useState<Edge[]>([]);
   const [nodes, setNodes] = useState<TreeNode[]>([]);
   const [scaledNodes, setScaledNodes] = useState<TreeNode[]>([]);
-  const [minCost, setMinCost] = useState<number>(0);
-  const [hasGenerated, setHasGenerated] = useState<boolean>(false);
 
   // Redraw function to clear the canvas and redraw the tree
   const drawCanvas = () => {
@@ -322,10 +325,6 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
     const maxDimension = Math.max(width, height);
     const tileSize = Math.max(canvas.width, canvas.height) / maxDimension;
     const scaledTileSize = tileSize / 2;
-
-    console.log("Drawing canvas");
-    console.log("width", canvas.width);
-    console.log("height", canvas.height);
 
     // Set background to grey
     ctx.fillStyle = "#4a4a4a";
@@ -388,39 +387,42 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
     });
   };
 
-  // Update canvasWidth and trigger a redraw on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
+  const handleResize = () => {
+    const canvas = canvasRef.current;
 
-      if (!canvas) return;
+    if (!canvas) return;
 
-      canvas.width = document.documentElement.clientWidth;
-      canvas.height = window.innerHeight * 0.4;
+    canvas.width = document.documentElement.clientWidth;
+    canvas.height = window.innerHeight * 0.4;
 
-      drawCanvas();
-    };
-    handleResize();
+    const newWidth = Math.floor(canvas.width / 50);
+    const newHeight = Math.floor(canvas.height / 50);
+    setWidth(newWidth);
+    setHeight(newHeight);
+
+    const newEdges = generateGridEdges(newWidth, newHeight);
+    setEdges(newEdges);
+
+    const { nodes } = spanningTree(newWidth, newHeight, newEdges);
+    setNodes(nodes);
+    setScaledNodes(scaleUpNodes(nodes, newWidth, newHeight));
+
     drawCanvas();
+  };
 
+  useEffect(() => {
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [nodes, scaledNodes]);
+  }, []);
 
-  // Initial generation and drawing
   useEffect(() => {
-    const { nodes, minCost } = spanningTree(width, height, edges);
-    if (!hasGenerated) {
-      setNodes(nodes);
-      setMinCost(minCost);
-      setScaledNodes(scaleUpNodes(nodes, width, height));
-      setHasGenerated(true);
-    }
-  }, [edges, hasGenerated]);
+    drawCanvas();
+  }, [nodes, edges]);
 
-  return <canvas ref={canvasRef} />;
+  return <canvas ref={canvasRef} onClick={onClick} />;
 };
 
 export default SpanningTree;

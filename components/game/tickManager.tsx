@@ -6,12 +6,14 @@
 
 import { useEffect } from "react";
 import { SnakeGame } from "./Snake/SnakeGame";
+import { GAME_SPEED } from "./constants";
 
 export let snakeGame: SnakeGame;
 
 export function canvasClick() {
   resetGames();
   snakeGame.AI = false;
+  snakeGame.speed = GAME_SPEED;
 }
 
 function resetGames() {

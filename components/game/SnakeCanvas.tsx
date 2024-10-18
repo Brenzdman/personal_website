@@ -26,7 +26,7 @@ export function SnakeCanvas() {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <SpanningTree width={50} height={10} />
+      <SpanningTree width={50} height={10} onClick={canvasClick} />
       <div
         style={{
           position: "absolute",
@@ -49,7 +49,7 @@ export function SnakeCanvas() {
             boxSizing: "border-box",
           }}
         >
-          <canvas ref={canvasRef} id="snakeCanvas" onClick={canvasClick} />
+          <canvas ref={canvasRef} id="snakeCanvas" />
         </div>
       </div>
     </div>

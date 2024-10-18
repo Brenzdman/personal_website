@@ -1,12 +1,42 @@
-// Includes image of myself and a brief introduction
+"use client";
+import { useState, useEffect } from "react";
 import image from "../public/images/Brenden_Bushman_Circle.jpg";
 import intro from "../text/intro";
 
 export default function TopSegment() {
+  const [isVertical, setIsVertical] = useState(
+    window.innerWidth < window.innerHeight
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsVertical(window.innerWidth < window.innerHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const imageElement = () => {
+    return (
+      <img
+        style={{
+          borderRadius: "50%",
+          width: "25vw",
+          height: "25vw",
+          boxShadow: "0 6px 10px rgba(0, 0, 0, 0.15)",
+        }}
+        src={image.src}
+        alt="Brenden Bushman"
+      />
+    );
+  };
+
   return (
     <div
       style={{
         display: "flex",
+        flexDirection: isVertical ? "column" : "row", // Switch between vertical and horizontal layout
         justifyContent: "space-between",
         backgroundColor: "#fdfdfd",
         alignItems: "center",
@@ -16,6 +46,20 @@ export default function TopSegment() {
         boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
       }}
     >
+      {/* Render the image first when vertical */}
+      {isVertical && (
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "20px", // Add spacing between image and text when in vertical mode
+          }}
+        >
+          {imageElement()}
+        </div>
+      )}
+
       <div
         style={{
           flex: 1,
@@ -27,24 +71,19 @@ export default function TopSegment() {
       >
         {intro()}
       </div>
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <img
+
+      {/* Render the image last when horizontal */}
+      {!isVertical && (
+        <div
           style={{
-            borderRadius: "50%",
-            width: "25vw",
-            height: "25vw",
-            boxShadow: "0 6px 10px rgba(0, 0, 0, 0.15)",
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
           }}
-          src={image.src}
-          alt="Brenden Bushman"
-        />
-      </div>
+        >
+          {imageElement()}
+        </div>
+      )}
     </div>
   );
 }
