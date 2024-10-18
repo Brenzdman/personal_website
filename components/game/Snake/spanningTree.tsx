@@ -19,17 +19,8 @@ class Node {
   }
 }
 
-const WIDTH = 25;
+const WIDTH = 5;
 const HEIGHT = 5;
-
-class HamiltonianNode {
-  constructor(
-    public x: number,
-    public y: number,
-    public nextNode: HamiltonianNode | null = null,
-    public prevNode: HamiltonianNode | null = null
-  ) {}
-}
 
 function makeSet(parent: number[], rank: number[], n: number) {
   for (let i = 0; i < n; i++) {
