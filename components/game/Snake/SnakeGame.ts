@@ -56,7 +56,7 @@ export class SnakeGame {
     }
 
     this.grid.drawGrid("snakeCanvas", 0.1);
-    drawHamiltonianCycle(this);
+    // drawHamiltonianCycle(this);
   }
 
   managePlayerSnake() {

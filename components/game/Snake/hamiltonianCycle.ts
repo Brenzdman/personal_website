@@ -145,7 +145,7 @@ function checkPath(info: SnakeGame): boolean {
   const grid = info.grid;
 
   // If the snake is too close to the end the game, don't shortcut as it makes empty tiles
-  if (activeTiles.length > (grid.gridTilesX * grid.gridTilesY * 7) / 10) {
+  if (activeTiles.length > (grid.gridTilesX * grid.gridTilesY * 6.25) / 10) {
     return false;
   }
 

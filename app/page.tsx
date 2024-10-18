@@ -1,6 +1,5 @@
 import { Border } from "@/components/Border";
-import { Canvas } from "@/components/game/Canvas";
-import SpanningTree from "@/components/game/Snake/spanningTree";
+import { SnakeCanvas } from "@/components/game/SnakeCanvas";
 import LinkSegment from "@/components/LinkSegment";
 import TopSegment from "@/components/TopSegment";
 
@@ -12,8 +11,7 @@ export default function Home() {
         <TopSegment />
       </Border>
 
-      <Canvas />
-      <SpanningTree />
+      <SnakeCanvas />
     </div>
   );
 }

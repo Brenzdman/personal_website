@@ -19,9 +19,6 @@ class TreeNode {
   }
 }
 
-const WIDTH = 25;
-const HEIGHT = 5;
-
 function makeSet(parent: number[], rank: number[], n: number) {
   for (let i = 0; i < n; i++) {
     parent[i] = i;
@@ -81,12 +78,16 @@ function spanningTree(
   return { nodes, minCost };
 }
 
-function scaleUpNodes(nodes: TreeNode[]): TreeNode[] {
+function scaleUpNodes(
+  nodes: TreeNode[],
+  width: number,
+  height: number
+): TreeNode[] {
   let scaledNodes: TreeNode[] = [];
 
   // Initialize scaled nodes
-  for (let i = 0; i < WIDTH * 2; i++) {
-    for (let j = 0; j < HEIGHT * 2; j++) {
+  for (let i = 0; i < width * 2; i++) {
+    for (let j = 0; j < height * 2; j++) {
       scaledNodes.push(new TreeNode(i, j));
     }
   }
@@ -263,8 +264,8 @@ export function generateHamiltonianCycle(
   cols: number
 ): TreeNode[] {
   const edges = generateGridEdges(rows, cols);
-  const { nodes } = spanningTree(WIDTH, HEIGHT, edges);
-  const scaledNodes = scaleUpNodes(nodes);
+  const { nodes } = spanningTree(rows, cols, edges);
+  const scaledNodes = scaleUpNodes(nodes, rows, cols);
 
   let cycle: TreeNode[] = [];
   let currentNode = scaledNodes[0];
@@ -298,76 +299,141 @@ export function generateHamiltonianCycle(
 
   return cycle;
 }
-
-const SpanningTree: React.FC = () => {
+interface SpanningTreeProps {
+  width: number;
+  height: number;
+}
+const SpanningTree: React.FC<SpanningTreeProps> = ({ width, height }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [edges] = useState<Edge[]>(generateGridEdges(WIDTH, HEIGHT));
+  const [edges] = useState<Edge[]>(generateGridEdges(width, height));
   const [nodes, setNodes] = useState<TreeNode[]>([]);
   const [scaledNodes, setScaledNodes] = useState<TreeNode[]>([]);
   const [minCost, setMinCost] = useState<number>(0);
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
 
-  // Set the canvas dimensions
-  const canvasWidth = 800;
-  const canvasHeight = 800;
+  // Redraw function to clear the canvas and redraw the tree
+  const redrawCanvas = (
+    ctx: CanvasRenderingContext2D,
+    tileSize: number,
+    scaledTileSize: number
+  ) => {
+    const canvas = canvasRef.current;
 
+    if (!canvas) return;
+    // Set background to grey
+    ctx.fillStyle = "#4a4a4a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#6e6e6e";
+    ctx.lineWidth = 2;
+
+    // Calculate offsets to center the drawing
+    const offsetX = (canvas.width - width * tileSize) / 2;
+    const offsetY = (canvas.height - height * tileSize) / 2;
+
+    // Draw rectangles in purple
+    nodes.forEach((node) => {
+      node.connections.forEach(([x, y]) => {
+        const x1 = node.x * tileSize + tileSize / 2 + offsetX;
+        const y1 = node.y * tileSize + tileSize / 2 + offsetY;
+        const x2 = x * tileSize + tileSize / 2 + offsetX;
+        const y2 = y * tileSize + tileSize / 2 + offsetY;
+
+        const rectY1 = y1 - tileSize / 4;
+        const rectY2 = y2 + tileSize / 4;
+        const rectX1 = x1 - tileSize / 4;
+        const rectX2 = x2 + tileSize / 4;
+
+        // draw rectangle
+        ctx.fillStyle = "#5e5e5e";
+        ctx.fillRect(rectX1, rectY1, rectX2 - rectX1, rectY2 - rectY1);
+      });
+    });
+
+    // Draw original nodes and connections in green
+    nodes.forEach((node) => {
+      node.connections.forEach(([x, y]) => {
+        const x1 = node.x * tileSize + tileSize / 2 + offsetX;
+        const y1 = node.y * tileSize + tileSize / 2 + offsetY;
+        const x2 = x * tileSize + tileSize / 2 + offsetX;
+        const y2 = y * tileSize + tileSize / 2 + offsetY;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      });
+    });
+
+    // Draw scaled-up nodes and connections in red
+    ctx.strokeStyle = "#383838";
+    ctx.lineWidth = 2;
+    scaledNodes.forEach((node) => {
+      node.connections.forEach(([x, y]) => {
+        const x1 = node.x * scaledTileSize + scaledTileSize / 2 + offsetX;
+        const y1 = node.y * scaledTileSize + scaledTileSize / 2 + offsetY;
+        const x2 = x * scaledTileSize + scaledTileSize / 2 + offsetX;
+        const y2 = y * scaledTileSize + scaledTileSize / 2 + offsetY;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      });
+    });
+  };
+
+  // Update canvasWidth and trigger a redraw on window resize
   useEffect(() => {
-    const { nodes, minCost } = spanningTree(WIDTH, HEIGHT, edges);
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+
+      if (!canvas) return;
+
+      canvas.width = document.documentElement.clientWidth;
+      canvas.height = window.innerHeight * 0.4;
+
+      const ctx = canvas.getContext("2d")!;
+
+      const maxDimension = Math.max(width, height);
+      const tileSize = Math.min(canvas.width, canvas.height) / maxDimension;
+      const scaledTileSize = tileSize / 2;
+
+      redrawCanvas(ctx, tileSize, scaledTileSize);
+    };
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [nodes, scaledNodes]);
+
+  // Initial generation and drawing
+  useEffect(() => {
+    const { nodes, minCost } = spanningTree(width, height, edges);
     if (!hasGenerated) {
       setNodes(nodes);
       setMinCost(minCost);
-      setScaledNodes(scaleUpNodes(nodes));
+      setScaledNodes(scaleUpNodes(nodes, width, height));
       setHasGenerated(true);
     }
-  }, [edges]);
+  }, [edges, hasGenerated]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "green";
+        const maxDimension = Math.max(width, height);
 
-        // Use maxDimension to ensure square tiles
-        const maxDimension = Math.max(WIDTH, HEIGHT);
-        const tileSize = Math.min(canvas.width, canvas.height) / maxDimension;
-
-        // Draw original nodes and connections in green
-        nodes.forEach((node) => {
-          node.connections.forEach(([x, y]) => {
-            const x1 = node.x * tileSize + tileSize / 2;
-            const y1 = node.y * tileSize + tileSize / 2;
-            const x2 = x * tileSize + tileSize / 2;
-            const y2 = y * tileSize + tileSize / 2;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-          });
-        });
-
-        // Draw scaled-up nodes and connections in red
-        ctx.strokeStyle = "red";
+        const tileSize = Math.max(canvas.width, canvas.height) / maxDimension;
         const scaledTileSize = tileSize / 2;
 
-        scaledNodes.forEach((node) => {
-          node.connections.forEach(([x, y]) => {
-            const x1 = node.x * scaledTileSize + scaledTileSize / 2;
-            const y1 = node.y * scaledTileSize + scaledTileSize / 2;
-            const x2 = x * scaledTileSize + scaledTileSize / 2;
-            const y2 = y * scaledTileSize + scaledTileSize / 2;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-          });
-        });
+        redrawCanvas(ctx, tileSize, scaledTileSize);
       }
     }
   }, [nodes, scaledNodes, minCost]);
 
-  return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} />;
+  return <canvas ref={canvasRef} width={100} height={100} />;
 };
 
 export default SpanningTree;
