@@ -19,7 +19,7 @@ class Node {
   }
 }
 
-const WIDTH = 5;
+const WIDTH = 25;
 const HEIGHT = 5;
 
 class HamiltonianNode {
@@ -110,42 +110,116 @@ function scaleUpNodes(nodes: Node[]): Node[] {
 
     // Get the scaled node indexes
     const scaledNodeIndexes = getScaledNodeIndexes(node);
-    let newNodes: Node[] = [];
 
-    // Create new nodes for the scaled indexes
-    scaledNodeIndexes.forEach((index) => {
-      let newNode = new Node(index[0], index[1]);
-      newNodes.push(newNode);
-    });
+    //Primary four nodes
+    const upLeft = scaledNodes.find(
+      (n) => n.x === scaledNodeIndexes[0][0] && n.y === scaledNodeIndexes[0][1]
+    )!;
+    const upRight = scaledNodes.find(
+      (n) => n.x === scaledNodeIndexes[1][0] && n.y === scaledNodeIndexes[1][1]
+    )!;
+    const downLeft = scaledNodes.find(
+      (n) => n.x === scaledNodeIndexes[2][0] && n.y === scaledNodeIndexes[2][1]
+    )!;
+    const downRight = scaledNodes.find(
+      (n) => n.x === scaledNodeIndexes[3][0] && n.y === scaledNodeIndexes[3][1]
+    )!;
 
-    // Establish proper connections based on the absence of connections in specific directions
+    // Add connections to the scaled nodes
     if (!connectedDirections.includes("up")) {
-      const node1 = newNodes[0];
-      const node2 = newNodes[1];
-      node1.connections.push([node2.x, node2.y]);
-      node2.connections.push([node1.x, node1.y]);
+      upLeft.addProperConnection(upRight.x, upRight.y);
+      upRight.addProperConnection(upLeft.x, upLeft.y);
     }
     if (!connectedDirections.includes("down")) {
-      const node1 = newNodes[2];
-      const node2 = newNodes[3];
-      node1.connections.push([node2.x, node2.y]);
-      node2.connections.push([node1.x, node1.y]);
+      downLeft.addProperConnection(downRight.x, downRight.y);
+      downRight.addProperConnection(downLeft.x, downLeft.y);
     }
     if (!connectedDirections.includes("left")) {
-      const node1 = newNodes[0];
-      const node2 = newNodes[2];
-      node1.connections.push([node2.x, node2.y]);
-      node2.connections.push([node1.x, node1.y]);
+      upLeft.addProperConnection(downLeft.x, downLeft.y);
+      downLeft.addProperConnection(upLeft.x, upLeft.y);
     }
     if (!connectedDirections.includes("right")) {
-      const node1 = newNodes[1];
-      const node2 = newNodes[3];
-      node1.connections.push([node2.x, node2.y]);
-      node2.connections.push([node1.x, node1.y]);
+      upRight.addProperConnection(downRight.x, downRight.y);
+      downRight.addProperConnection(upRight.x, upRight.y);
     }
 
-    // Add the new nodes to the scaled nodes array
-    scaledNodes.push(...newNodes);
+    // add connections to outer nodes
+
+    if (connectedDirections.includes("up")) {
+      const upUpLeft = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[0][0] && n.y === scaledNodeIndexes[0][1] - 1
+      )!;
+
+      const upUpRight = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[1][0] && n.y === scaledNodeIndexes[1][1] - 1
+      )!;
+
+      upLeft.addProperConnection(upUpLeft.x, upUpLeft.y);
+      upUpLeft.addProperConnection(upLeft.x, upLeft.y);
+      upRight.addProperConnection(upUpRight.x, upUpRight.y);
+      upUpRight.addProperConnection(upRight.x, upRight.y);
+    }
+
+    if (connectedDirections.includes("down")) {
+      const downDownLeft = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[2][0] && n.y === scaledNodeIndexes[2][1] + 1
+      )!;
+
+      const downDownRight = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[3][0] && n.y === scaledNodeIndexes[3][1] + 1
+      )!;
+
+      downLeft.addProperConnection(downDownLeft.x, downDownLeft.y);
+      downDownLeft.addProperConnection(downLeft.x, downLeft.y);
+      downRight.addProperConnection(downDownRight.x, downDownRight.y);
+      downDownRight.addProperConnection(downRight.x, downRight.y);
+    }
+
+    if (connectedDirections.includes("left")) {
+      const leftUpLeft = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[0][0] - 1 && n.y === scaledNodeIndexes[0][1]
+      )!;
+
+      const leftDownLeft = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[2][0] - 1 && n.y === scaledNodeIndexes[2][1]
+      )!;
+
+      upLeft.addProperConnection(leftUpLeft.x, leftUpLeft.y);
+      leftUpLeft.addProperConnection(upLeft.x, upLeft.y);
+      downLeft.addProperConnection(leftDownLeft.x, leftDownLeft.y);
+      leftDownLeft.addProperConnection(downLeft.x, downLeft.y);
+    }
+
+    if (connectedDirections.includes("right")) {
+      const rightUpRight = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[1][0] + 1 && n.y === scaledNodeIndexes[1][1]
+      )!;
+
+      const rightDownRight = scaledNodes.find(
+        (n) =>
+          n.x === scaledNodeIndexes[3][0] + 1 && n.y === scaledNodeIndexes[3][1]
+      )!;
+
+      upRight.addProperConnection(rightUpRight.x, rightUpRight.y);
+      rightUpRight.addProperConnection(upRight.x, upRight.y);
+      downRight.addProperConnection(rightDownRight.x, rightDownRight.y);
+      rightDownRight.addProperConnection(downRight.x, downRight.y);
+    }
+  });
+
+  // remove duplicate connections
+  scaledNodes.forEach((node) => {
+    node.connections = node.connections.filter(
+      ([x, y], index, self) =>
+        self.findIndex((t) => t[0] === x && t[1] === y) === index
+    );
   });
 
   return scaledNodes;
