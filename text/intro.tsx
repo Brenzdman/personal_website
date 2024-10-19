@@ -1,4 +1,5 @@
 // PoemInline.js
+import { ACCENT } from "@/components/colors";
 import React from "react";
 
 const IntroPoem = () => {
@@ -11,7 +12,7 @@ const IntroPoem = () => {
     margin: "50px auto",
     padding: "30px",
     backgroundColor: "#fdfdfd",
-    borderLeft: "5px solid #3c0980",
+    borderLeft: `5px solid ${ACCENT}`,
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   };
 
@@ -20,7 +21,7 @@ const IntroPoem = () => {
     textAlign: "left",
     marginBottom: "30px",
     fontSize: "2rem",
-    color: "#3c0980",
+    color: ACCENT,
   };
 
   const paragraphStyle: React.CSSProperties = {
@@ -29,7 +30,7 @@ const IntroPoem = () => {
 
   const highlightStyle: React.CSSProperties = {
     fontWeight: "700",
-    color: "#3c0980",
+    color: ACCENT,
   };
 
   return (
@@ -41,21 +42,21 @@ const IntroPoem = () => {
         that we can do for each other.
       </p>
       <p style={paragraphStyle}>
-        For each individual view of the world,
+        For each individual view of the world
         <br />
         and each individual idea of how to solve its problems <br />
         lends us a new identity from which we can more clearly see <br />
-        not only the true complexity of the problems themselves,
+        not only the true complexity of the problems themselves
         <br />
         but also the beauty that can be found within us all.
       </p>
       <p style={paragraphStyle}>
         So wherever you lay on the political spectrum,
         <br />
-        Wherever you were born, or whatever you believe,
+        wherever you were born, and whatever you believe,
         <br />
         <span style={highlightStyle}>
-          You matter, and you belong in the conversation.
+          you matter, and you belong in the conversation.
         </span>
       </p>
     </div>

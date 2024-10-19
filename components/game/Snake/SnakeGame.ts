@@ -96,12 +96,9 @@ export class SnakeGame {
       if (this.snake.isDangerAhead(this.snake.direction)) {
         if (!this.AI_dead) {
           this.AI_dead = true;
-          console.warn("Danger ahead, cya");
-          console.warn("Direction: ", this.snake.direction);
+          console.warn("Looks like this is the end for me, cya");
         }
-        console.log("setting timeout");
         setTimeout(() => {
-          console.log("Resetting game");
           this.resetGame();
         }, 5000);
       }

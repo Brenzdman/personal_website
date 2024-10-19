@@ -4,14 +4,14 @@ import image from "../public/images/Brenden_Bushman_Circle.jpg";
 import intro from "../text/intro";
 
 export default function TopSegment() {
-  const [isVertical, setIsVertical] = useState(
-    window.innerWidth < window.innerHeight
-  );
+  const [isVertical, setIsVertical] = useState<boolean>(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsVertical(window.innerWidth < window.innerHeight);
+      setIsVertical(window.innerHeight * 1.3 > window.innerWidth);
     };
+
+    handleResize();
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);

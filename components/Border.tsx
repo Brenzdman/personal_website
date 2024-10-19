@@ -9,7 +9,11 @@ interface BorderProps {
 export function Border({ children }: BorderProps) {
   useEffect(() => {
     const resizeBorder = () => {
-      const borderWidth = document.documentElement.clientWidth * 0.1;
+      let borderWidth = document.documentElement.clientWidth * 0.1;
+      if (window.innerHeight * 1.3 > window.innerWidth) {
+        borderWidth = 0;
+      }
+
       const border = document.getElementById("border");
       if (!border) return;
 

@@ -29,6 +29,27 @@ export class Grid {
     this.gridTiles = newGridTiles;
   }
 
+  getTileOffsets(border: number = 0.1) {
+    const canvasId = "snakeCanvas";
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
+      throw new Error("Canvas not found!");
+    }
+
+    const borderModif = 1 - border * 2;
+
+    // Adjust tile size calculation to ensure the grid is centered
+    const tileSize = Math.min(
+      (canvas.width * borderModif) / this.gridTilesX,
+      (canvas.height * borderModif) / this.gridTilesY
+    );
+
+    const offsetX = (canvas.width - this.gridTilesX * tileSize) / 2;
+    const offsetY = (canvas.height - this.gridTilesY * tileSize) / 2;
+
+    return { offsetX, offsetY, tileSize };
+  }
+
   drawLineBetweenTiles(tile1: TileID, tile2: TileID) {
     if (!this.draw) return;
 
@@ -48,13 +69,7 @@ export class Grid {
     }
 
     // Calculate tile size and borders
-    const borderModif = 1 - border * 2;
-    const maxDimension = Math.max(this.gridTilesX, this.gridTilesY);
-    const tileSize =
-      Math.max(canvas.width * borderModif, canvas.height * borderModif) /
-      maxDimension;
-    const offsetX = (canvas.width - this.gridTilesX * tileSize) / 2;
-    const offsetY = (canvas.height - this.gridTilesY * tileSize) / 2;
+    const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
 
     // Draw the line between the tiles
     context.beginPath();
@@ -87,14 +102,15 @@ export class Grid {
     }
 
     // Calculate tile size and borders
-    const borderModif = 1 - border * 2;
+    const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
 
-    const maxDimension = Math.max(this.gridTilesX, this.gridTilesY);
-    const tileSize =
-      Math.max(canvas.width * borderModif, canvas.height * borderModif) /
-      maxDimension;
-    const offsetX = (canvas.width - this.gridTilesX * tileSize) / 2;
-    const offsetY = (canvas.height - this.gridTilesY * tileSize) / 2;
+    // **Draw the black border around the outer grid area**
+    const gridWidth = this.gridTilesX * tileSize;
+    const gridHeight = this.gridTilesY * tileSize;
+
+    context.strokeStyle = "black";
+    context.lineWidth = 4; // Adjust line width as needed
+    context.strokeRect(offsetX, offsetY, gridWidth, gridHeight);
 
     // Draw each tile
     for (let x = 0; x < this.gridTilesX; x++) {

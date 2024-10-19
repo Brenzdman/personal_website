@@ -1,5 +1,6 @@
 "use client";
 
+import { get } from "http";
 import React, { useEffect, useRef, useState } from "react";
 
 type Edge = [number, number, number];
@@ -329,14 +330,79 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ onClick }) => {
     // Set background to grey
     ctx.fillStyle = "#4a4a4a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#6e6e6e";
     ctx.lineWidth = 2;
 
     // Calculate offsets to center the drawing
     const offsetX = (canvas.width - width * tileSize) / 2;
     const offsetY = (canvas.height - height * tileSize) / 2;
 
-    // Draw rectangles in purple
+    // Function to generate gradient color based on coordinates
+    const getGradientColor = (
+      x: number,
+      y: number,
+      xTotal: number,
+      yTotal: number
+    ) => {
+      const xPercentage = (x / xTotal) * 100;
+      const yPercentage = (y / yTotal) * 100;
+      const distanceFromBottom = 100 - yPercentage;
+      const distanceFromTopRight = Math.sqrt(
+        (100 - xPercentage) ** 2 + yPercentage ** 2
+      );
+      let greyValue = Math.floor(
+        (((distanceFromBottom + distanceFromTopRight) / 2) * 255) / 200
+      );
+      greyValue += Math.floor(Math.random() * 10) - 5;
+      return `rgb(${greyValue}, ${greyValue}, ${greyValue})`;
+    };
+
+    // Function to brighten a given color (slightly increase RGB values)
+    const brightenColor = (color: string, amount: number = 20) => {
+      let r, g, b;
+      const rgbRegex = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/;
+      const match = color.match(rgbRegex);
+
+      if (match) {
+        r = Math.min(parseInt(match[1]) + amount, 255);
+        g = Math.min(parseInt(match[2]) + amount, 255);
+        b = Math.min(parseInt(match[3]) + amount, 255);
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+      return color;
+    };
+
+    // Draw scaled-up nodes and connections (upper tiles)
+    scaledNodes.forEach((node) => {
+      node.connections.forEach(([x, y]) => {
+        const x1 = node.x * scaledTileSize + scaledTileSize / 2 + offsetX;
+        const y1 = node.y * scaledTileSize + scaledTileSize / 2 + offsetY;
+
+        let tileGradientColor = getGradientColor(node.x, node.y, width, height);
+        if (y == 0) {
+          tileGradientColor = getGradientColor(x, y - 1, width, height);
+          ctx.fillStyle = tileGradientColor;
+          ctx.fillRect(x1, 0, scaledTileSize, y1);
+        }
+
+        if (x == 0) {
+          tileGradientColor = getGradientColor(x - 1, y, width, height);
+          ctx.fillStyle = tileGradientColor;
+          ctx.fillRect(0, y1, x1, scaledTileSize);
+        }
+
+        if (x == 0 && y == 0) {
+          (tileGradientColor = getGradientColor(x - 1, y - 1, width, height)),
+            (ctx.fillStyle = tileGradientColor);
+          ctx.fillRect(0, 0, x1, y1);
+        }
+
+        // Draw scaled-up tiles as the background
+        ctx.fillStyle = tileGradientColor;
+        ctx.fillRect(x1, y1, scaledTileSize, scaledTileSize);
+      });
+    });
+
+    // Draw rectangles for the Hamiltonian curve
     nodes.forEach((node) => {
       node.connections.forEach(([x, y]) => {
         const x1 = node.x * tileSize + tileSize / 2 + offsetX;
@@ -349,43 +415,52 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ onClick }) => {
         const rectX1 = x1 - tileSize / 4;
         const rectX2 = x2 + tileSize / 4;
 
-        // draw rectangle
-        ctx.fillStyle = "#5e5e5e";
+        // Set shadow properties
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 5;
+
+        ctx.fillStyle = brightenColor(
+          getGradientColor(node.x, node.y, width, height),
+          30
+        );
+
         ctx.fillRect(rectX1, rectY1, rectX2 - rectX1, rectY2 - rectY1);
+
+        // Reset shadow properties to avoid affecting other elements
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
       });
     });
 
-    // Draw original nodes and connections in green
-    nodes.forEach((node) => {
-      node.connections.forEach(([x, y]) => {
-        const x1 = node.x * tileSize + tileSize / 2 + offsetX;
-        const y1 = node.y * tileSize + tileSize / 2 + offsetY;
-        const x2 = x * tileSize + tileSize / 2 + offsetX;
-        const y2 = y * tileSize + tileSize / 2 + offsetY;
+    // Draw lines for the Hamiltonian curve
+    // nodes.forEach((node) => {
+    //   node.connections.forEach(([x, y]) => {
+    //     const x1 = node.x * tileSize + tileSize / 2 + offsetX;
+    //     const y1 = node.y * tileSize + tileSize / 2 + offsetY;
+    //     const x2 = x * tileSize + tileSize / 2 + offsetX;
+    //     const y2 = y * tileSize + tileSize / 2 + offsetY;
 
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      });
-    });
+    //     // Determine gradient for the line based on start and end points
+    //     const lineGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+    //     lineGradient.addColorStop(
+    //       0,
+    //       getGradientColor(node.x, node.y, width, height)
+    //     );
+    //     lineGradient.addColorStop(1, getGradientColor(x, y, width, height));
 
-    // Draw scaled-up nodes and connections in red
-    ctx.strokeStyle = "#383838";
-    ctx.lineWidth = 2;
-    scaledNodes.forEach((node) => {
-      node.connections.forEach(([x, y]) => {
-        const x1 = node.x * scaledTileSize + scaledTileSize / 2 + offsetX;
-        const y1 = node.y * scaledTileSize + scaledTileSize / 2 + offsetY;
-        const x2 = x * scaledTileSize + scaledTileSize / 2 + offsetX;
-        const y2 = y * scaledTileSize + scaledTileSize / 2 + offsetY;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      });
-    });
+    //     ctx.strokeStyle = lineGradient;
+    //     ctx.beginPath();
+    //     ctx.moveTo(x1, y1);
+    //     ctx.lineTo(x2, y2);
+    //     ctx.stroke();
+    //   });
+    // });
   };
+
 
   const handleResize = () => {
     const canvas = canvasRef.current;
@@ -395,7 +470,7 @@ const SpanningTree: React.FC<SpanningTreeProps> = ({ onClick }) => {
     canvas.width = document.documentElement.clientWidth;
 
     if (!window) return;
-    canvas.height = window.innerHeight * 0.4;
+    canvas.height = window.innerHeight * 0.4 - 10;
 
     const newWidth = Math.floor(canvas.width / 50);
     const newHeight = Math.floor(canvas.height / 50);

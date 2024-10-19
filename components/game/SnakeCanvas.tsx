@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import TickManager, { canvasClick } from "./tickManager";
 import SpanningTree from "./Snake/spanningTree";
+import { ACCENT } from "../colors";
 
 export function SnakeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,7 +26,16 @@ export function SnakeCanvas() {
   }, []);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        paddingTop: "5px",
+        paddingBottom: "5px",
+        backgroundColor: ACCENT,
+      }}
+    >
       <SpanningTree width={50} height={10} onClick={canvasClick} />
       <div
         style={{
