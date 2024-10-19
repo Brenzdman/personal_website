@@ -4,7 +4,6 @@ import { AI_SPEED, GAME_SPEED } from "../constants";
 import { Grid, gradientGrid } from "../Grid";
 import { Apple } from "./Apple";
 import {
-  drawHamiltonianCycle,
   createHamiltonianCycle,
   getHamiltonianDirection,
 } from "./hamiltonianCycle";
@@ -107,13 +106,10 @@ export class SnakeGame {
   }
 
   handleClickMovement = (e: MouseEvent) => {
-    console.log("click");
     if (this.AI) return;
 
     const clickX = e.clientX;
     const clickY = e.clientY;
-
-    console.log(clickX, clickY);
 
     let newDirection1: number | undefined;
     let newDirection2: number | undefined;

@@ -6,8 +6,7 @@ export class Grid {
   public gridTiles: Tile[][] = [];
   public spacing = 4;
   public active: boolean = true;
-  public standardTileColor = "#3498db";
-  public standardTileBackgroundColor = "#2b80b9";
+  public standardTileColor = "#091187";
   public draw = true;
 
   constructor(public gridTilesX: number, public gridTilesY: number) {
@@ -97,19 +96,8 @@ export class Grid {
     if (snake.lives <= 0) {
       return;
     }
-
-    const snakeTiles = snake.activeTiles;
-
-    for (let i = 0; i < snakeTiles.length - 1; i++) {
-      const tile1 = snakeTiles[i];
-      const tile2 = snakeTiles[i + 1];
-      const tile = this.gridTiles[tile1.x][tile1.y];
-      const color = darkenColor(tile.color!, -15) || "#000000";
-
-      this.drawLineBetweenTiles(tile2, tile1, color);
-    }
-
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+
     if (!canvas) {
       console.error("Canvas not found!");
       return;
@@ -117,11 +105,37 @@ export class Grid {
     const ctx = canvas.getContext("2d")!;
     const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
 
+    const snakeTiles = snake.activeTiles;
+
+    for (let i = 0; i < snakeTiles.length; i++) {
+      const tile = snakeTiles[i];
+      const gridTile = this.gridTiles[tile.x][tile.y];
+
+      ctx.fillStyle = gridTile.color!;
+      ctx.fillRect(
+        tile.x * tileSize + offsetX,
+        tile.y * tileSize + offsetY,
+        tileSize,
+        tileSize
+      );
+    }
+
+    for (let i = 0; i < snakeTiles.length - 1; i++) {
+      const tile1 = snakeTiles[i];
+      const tile2 = snakeTiles[i + 1];
+      const tile = this.gridTiles[tile1.x][tile1.y];
+
+      let color = darkenColor(tile.color!, -15) || "#000000";
+
+      this.drawLineBetweenTiles(tile2, tile1, color);
+    }
+
     for (let i = 0; i < snakeTiles.length; i++) {
       const tileID = snakeTiles[i];
       const tile = this.gridTiles[tileID.x][tileID.y];
       // Draw the border of the tiles
       let backgroundColor = darkenColor(tile.color!)!;
+
       // sets opacity of border
       backgroundColor = backgroundColor.slice(0, -1) + ", 0.5)";
       ctx.strokeStyle = backgroundColor;
@@ -245,20 +259,8 @@ export class Grid {
         const tile = this.gridTiles[x][y];
 
         // Standard colors
-        let tileColor = this.standardTileColor;
-        let backgroundColor = this.standardTileBackgroundColor;
-
-        if (tile.color) tileColor = tile.color;
-        else tile.color = this.standardTileColor;
-
-        // Adds Shading
-        if (!tile.backgroundColor)
-          tile.backgroundColor = this.standardTileBackgroundColor;
-
-        if (tile.backgroundColor !== this.standardTileBackgroundColor)
-          backgroundColor = tile.backgroundColor;
-        else if (tile.color !== this.standardTileColor)
-          backgroundColor = darkenColor(tile.color) || backgroundColor;
+        let tileColor = tile.color;
+        let backgroundColor = tile.backgroundColor;
 
         // Draw the tile
         ctx.fillStyle = tileColor;
@@ -297,15 +299,30 @@ export class TileID {
 export class Tile {
   public full = false;
   public active = false;
+  public defaultColor = this.grid.standardTileColor;
+  public defaultBackgroundColor = this.defaultColor;
+  public backgroundColor: string = this.defaultColor;
+  public color: string = this.defaultColor;
 
   constructor(
     public x: number,
     public y: number,
     public grid: Grid,
-    public type: string = "None",
-    public backgroundColor: string | undefined = undefined,
-    public color: string | undefined = undefined
-  ) {}
+    public type: string = "None"
+  ) {
+    this.defaultColor = getGradientColor(
+      this.x,
+      this.y,
+      this.grid.gridTilesX,
+      this.grid.gridTilesY,
+      this.backgroundColor
+    );
+
+    this.color = this.defaultColor;
+    this.defaultBackgroundColor =
+      darkenColor(this.defaultColor, 15) || "#000000";
+    this.backgroundColor = this.defaultBackgroundColor;
+  }
 
   fillTile() {
     this.full = true;
@@ -317,8 +334,8 @@ export class Tile {
     this.type = "None";
 
     if (this.grid.active) {
-      this.color = this.grid.standardTileColor;
-      this.backgroundColor = this.grid.standardTileBackgroundColor;
+      this.color = this.defaultColor;
+      this.backgroundColor = this.defaultBackgroundColor;
     }
   }
 }
@@ -328,7 +345,8 @@ export function getGradientColor(
   x: number,
   y: number,
   xTotal: number,
-  yTotal: number
+  yTotal: number,
+  baseColor: string | null = null
 ): string {
   // Calculate percentages based on the given points
   const xPercentage = (x / xTotal) * 100;
@@ -339,6 +357,21 @@ export function getGradientColor(
   const distanceFromTopRight = Math.sqrt(
     (100 - xPercentage) ** 2 + yPercentage ** 2
   );
+
+  // If baseColor is provided, blend towards a lighter or darker variant of it
+  if (baseColor) {
+    // Darken or lighten based on distances
+    const offset = Math.floor(
+      (((distanceFromBottom + distanceFromTopRight) / 2) * 255) / 200
+    );
+    const modifiedColor = darkenColor(baseColor, -offset);
+
+    if (!modifiedColor) {
+      console.error("Invalid color format");
+      return baseColor;
+    }
+    return modifiedColor;
+  }
 
   // Gets color values between dark (0, 0, 0) and light (255, 255, 255) based on distances
   let greyValue = Math.floor(
@@ -394,16 +427,23 @@ export function darkenColor(color: string, offset = 30): string | null {
   return newRGBString;
 }
 
-export function gradientGrid(grid: Grid) {
+export function gradientGrid(grid: Grid, baseColor: string | null = null) {
   for (let i = 0; i < grid.gridTilesX; i++) {
     for (let j = 0; j < grid.gridTilesY; j++) {
       const tile = grid.gridTiles[i][j];
-      tile.color = getGradientColor(i, j, grid.gridTilesX, grid.gridTilesY);
+      tile.color = getGradientColor(
+        i,
+        j,
+        grid.gridTilesX,
+        grid.gridTilesY,
+        baseColor
+      );
       tile.backgroundColor = getGradientColor(
         i,
         j,
         grid.gridTilesX,
-        grid.gridTilesY
+        grid.gridTilesY,
+        baseColor
       );
     }
   }
