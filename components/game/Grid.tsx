@@ -1,5 +1,7 @@
 "use client";
 
+import { Snake } from "./Snake/Snake";
+
 export class Grid {
   public gridTiles: Tile[][] = [];
   public spacing = 4;
@@ -50,7 +52,11 @@ export class Grid {
     return { offsetX, offsetY, tileSize };
   }
 
-  drawLineBetweenTiles(tile1: TileID, tile2: TileID) {
+  drawLineBetweenTiles(
+    tile1: TileID,
+    tile2: TileID,
+    color: string = "#000000"
+  ) {
     if (!this.draw) return;
 
     const canvasId = "snakeCanvas";
@@ -62,9 +68,9 @@ export class Grid {
       return;
     }
 
-    const context = canvas.getContext("2d");
-    if (!context) {
-      console.error("Unable to get canvas context!");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Unable to get canvas ctx!");
       return;
     }
 
@@ -72,21 +78,132 @@ export class Grid {
     const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
 
     // Draw the line between the tiles
-    context.beginPath();
-    context.strokeStyle = "black";
-    context.lineWidth = 2;
-    context.moveTo(
+    ctx.lineCap = "square";
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = (tileSize * 3) / 5;
+    ctx.moveTo(
       tile1.x * tileSize + offsetX + tileSize / 2,
       tile1.y * tileSize + offsetY + tileSize / 2
     );
-    context.lineTo(
+    ctx.lineTo(
       tile2.x * tileSize + offsetX + tileSize / 2,
       tile2.y * tileSize + offsetY + tileSize / 2
     );
-    context.stroke();
+    ctx.stroke();
   }
 
-  drawGrid(canvasId: string, border: number = 0.1) {
+  drawSnake(canvasId: string, snake: Snake, border: number = 0.1) {
+    if (snake.lives <= 0) {
+      return;
+    }
+
+    const snakeTiles = snake.activeTiles;
+
+    for (let i = 0; i < snakeTiles.length - 1; i++) {
+      const tile1 = snakeTiles[i];
+      const tile2 = snakeTiles[i + 1];
+      const tile = this.gridTiles[tile1.x][tile1.y];
+      const color = darkenColor(tile.color!, -15) || "#000000";
+
+      this.drawLineBetweenTiles(tile2, tile1, color);
+    }
+
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
+      console.error("Canvas not found!");
+      return;
+    }
+    const ctx = canvas.getContext("2d")!;
+    const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
+
+    for (let i = 0; i < snakeTiles.length; i++) {
+      const tileID = snakeTiles[i];
+      const tile = this.gridTiles[tileID.x][tileID.y];
+      // Draw the border of the tiles
+      let backgroundColor = darkenColor(tile.color!)!;
+      // sets opacity of border
+      backgroundColor = backgroundColor.slice(0, -1) + ", 0.5)";
+      ctx.strokeStyle = backgroundColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        tile.x * tileSize + offsetX,
+        tile.y * tileSize + offsetY,
+        tileSize,
+        tileSize
+      );
+    }
+
+    // Draws Better Apple
+    const apple = snake.apple;
+    if (!apple) return;
+
+    const tile = this.gridTiles[apple.x][apple.y];
+    const color = darkenColor(tile.color!, -15) || "#000000";
+    ctx.fillStyle = color;
+    // Draws a rect in the inner 4/5ths of the tile
+    ctx.fillRect(
+      apple.x * tileSize + offsetX + tileSize / 10,
+      apple.y * tileSize + offsetY + tileSize / 10,
+      (tileSize * 3.75) / 5,
+      (tileSize * 3.75) / 5
+    );
+
+    // gets direction of snake
+    const direction = snake.direction;
+    // Draw eyes on snake based on direction
+    const eyeSize = tileSize / 5;
+    const eyeOffset = tileSize / 10;
+    ctx.fillStyle = "#000000";
+    const headTile = snake.activeTiles[0];
+
+    // Draws eyes on the snake
+    let offsetX1 = 0;
+    let offsetX2 = 0;
+    let offsetY1 = 0;
+    let offsetY2 = 0;
+
+    if (direction === 0) {
+      // Right
+      offsetX1 = tileSize - eyeOffset - eyeSize;
+      offsetY1 = eyeOffset;
+      offsetX2 = tileSize - eyeOffset - eyeSize;
+      offsetY2 = tileSize - eyeOffset - eyeSize;
+    } else if (direction === Math.PI / 2) {
+      // Up
+      offsetX1 = eyeOffset;
+      offsetY1 = eyeOffset;
+      offsetX2 = tileSize - eyeOffset - eyeSize;
+      offsetY2 = eyeOffset;
+    } else if (direction === Math.PI) {
+      // Left
+      offsetX1 = eyeOffset;
+      offsetY1 = tileSize - eyeOffset - eyeSize;
+      offsetX2 = eyeOffset;
+      offsetY2 = eyeOffset;
+    } else if (direction === (3 * Math.PI) / 2) {
+      // Down
+      offsetX1 = eyeOffset;
+      offsetY1 = tileSize - eyeOffset - eyeSize;
+      offsetX2 = tileSize - eyeOffset - eyeSize;
+      offsetY2 = tileSize - eyeOffset - eyeSize;
+    }
+
+    ctx.fillRect(
+      headTile.x * tileSize + offsetX + offsetX1,
+      headTile.y * tileSize + offsetY + offsetY1,
+      eyeSize,
+      eyeSize
+    );
+    ctx.fillRect(
+      headTile.x * tileSize + offsetX + offsetX2,
+      headTile.y * tileSize + offsetY + offsetY2,
+      eyeSize,
+      eyeSize
+    );
+  }
+
+  drawGrid(canvasId: string, border: number = 0.1, snake: Snake) {
     if (!this.draw) return;
 
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -95,22 +212,32 @@ export class Grid {
       return;
     }
 
-    const context = canvas.getContext("2d");
-    if (!context) {
-      console.error("Unable to get canvas context!");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Unable to get canvas ctx!");
       return;
     }
 
     // Calculate tile size and borders
     const { offsetX, offsetY, tileSize } = this.getTileOffsets(border);
 
-    // **Draw the black border around the outer grid area**
+    //  gradient for the border around the outer grid area
     const gridWidth = this.gridTilesX * tileSize;
     const gridHeight = this.gridTilesY * tileSize;
 
-    context.strokeStyle = "black";
-    context.lineWidth = 4; // Adjust line width as needed
-    context.strokeRect(offsetX, offsetY, gridWidth, gridHeight);
+    const gradient = ctx.createLinearGradient(
+      offsetX,
+      offsetY,
+      offsetX + gridWidth,
+      offsetY + gridHeight
+    );
+    gradient.addColorStop(0, "#8988db");
+    gradient.addColorStop(0.5, "#5554a1");
+    gradient.addColorStop(1, "#3c2366");
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(offsetX, offsetY, gridWidth, gridHeight);
 
     // Draw each tile
     for (let x = 0; x < this.gridTilesX; x++) {
@@ -134,8 +261,8 @@ export class Grid {
           backgroundColor = darkenColor(tile.color) || backgroundColor;
 
         // Draw the tile
-        context.fillStyle = tileColor;
-        context.fillRect(
+        ctx.fillStyle = tileColor;
+        ctx.fillRect(
           x * tileSize + offsetX,
           y * tileSize + offsetY,
           tileSize,
@@ -143,9 +270,9 @@ export class Grid {
         );
 
         // Draw the border of the tile
-        context.strokeStyle = backgroundColor;
-        context.lineWidth = 2;
-        context.strokeRect(
+        ctx.strokeStyle = backgroundColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
           x * tileSize + offsetX,
           y * tileSize + offsetY,
           tileSize,
@@ -153,6 +280,8 @@ export class Grid {
         );
       }
     }
+
+    this.drawSnake(canvasId, snake, border);
   }
 
   // Clears the grid, different name, same function
@@ -223,7 +352,7 @@ export function getGradientColor(
   return rgbColor;
 }
 
-export function darkenColor(color: string) {
+export function darkenColor(color: string, offset = 30): string | null {
   let r, g, b;
 
   // Handling RGB format: 'rgb(r, g, b)'
@@ -256,9 +385,9 @@ export function darkenColor(color: string) {
     }
   }
 
-  r -= 30;
-  g -= 30;
-  b -= 30;
+  r -= offset;
+  g -= offset;
+  b -= offset;
 
   // Construct the new RGB string
   const newRGBString = `rgb(${r}, ${g}, ${b})`;

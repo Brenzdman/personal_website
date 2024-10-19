@@ -47,7 +47,7 @@ export class SnakeGame {
   }
 
   handleResize = () => {
-    this.grid.drawGrid("snakeCanvas", 0.1);
+    this.grid.drawGrid("snakeCanvas", 0.1, this.snake);
   };
 
   snakeTick() {
@@ -67,7 +67,7 @@ export class SnakeGame {
       this.managePlayerSnake();
     }
 
-    this.grid.drawGrid("snakeCanvas", 0.1);
+    this.grid.drawGrid("snakeCanvas", 0.1, this.snake);
     // drawHamiltonianCycle(this);
   }
 

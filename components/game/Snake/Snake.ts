@@ -49,7 +49,7 @@ export class Snake {
       const tile = gridTiles[tileId.x][tileId.y];
 
       if (tile.type === PLAYER_HEAD_TYPE) {
-        tile.color = "#0000ff";
+        tile.color = "#5d04d1";
       } else {
         tile.type = PLAYER_BODY_TYPE;
         tile.color = "#2228db";

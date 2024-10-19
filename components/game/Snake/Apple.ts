@@ -1,6 +1,6 @@
 import { Grid } from "../Grid";
 
-const APPLE_COLOR = "#ff0000";
+const APPLE_COLOR = "#e81c37";
 const TILE_TYPE = "Apple";
 
 export class Apple {
