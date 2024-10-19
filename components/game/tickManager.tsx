@@ -48,14 +48,18 @@ export default function TickManager() {
 
 function addEventListeners() {
   if (snakeGame) {
+    window.addEventListener("click", (e: MouseEvent) =>
+      snakeGame.handleClickMovement(e)
+    );
     window.addEventListener("resize", snakeGame.handleResize);
     window.addEventListener("keydown", snakeGame.handleSnakeKeyDown);
   }
 }
 
 function removeEventListeners() {
-  if (snakeGame) {
-    window.removeEventListener("resize", snakeGame.handleResize);
-    window.removeEventListener("keydown", snakeGame.handleSnakeKeyDown);
-  }
+  window.removeEventListener("click", (e: MouseEvent) =>
+    snakeGame.handleClickMovement(e)
+  );
+  window.removeEventListener("resize", snakeGame.handleResize);
+  window.removeEventListener("keydown", snakeGame.handleSnakeKeyDown);
 }

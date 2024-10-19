@@ -38,7 +38,6 @@ export class SnakeGame {
     this.speed = this.AI ? AI_SPEED : GAME_SPEED;
     this.AI_directions = [];
     this.AI_dead = false;
-    
 
     createHamiltonianCycle(this);
   }
@@ -106,6 +105,86 @@ export class SnakeGame {
       this.snake.moveSnake();
     }
   }
+
+  handleClickMovement = (e: MouseEvent) => {
+    console.log("click");
+    if (this.AI) return;
+
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+
+    console.log(clickX, clickY);
+
+    let newDirection1: number | undefined;
+    let newDirection2: number | undefined;
+
+    // if click in top 3rd of screen
+    if (clickY < window.innerHeight / 3) {
+      newDirection1 = Math.PI / 2;
+      // if click in right 3rd of screen
+      if (clickX > (2 * window.innerWidth) / 3) {
+        newDirection2 = 0;
+      } else if (clickX < window.innerWidth / 3) {
+        newDirection2 = Math.PI;
+      }
+    }
+
+    // if click in bottom 3rd of screen
+    else if (clickY > (2 * window.innerHeight) / 3) {
+      newDirection1 = (3 * Math.PI) / 2;
+      // if click in right 3rd of screen
+      if (clickX > (2 * window.innerWidth) / 3) {
+        newDirection2 = 0;
+      } else if (clickX < window.innerWidth / 3) {
+        newDirection2 = Math.PI;
+      }
+    }
+
+    // if click in left 3rd of screen
+    else if (clickX < window.innerWidth / 3) {
+      newDirection1 = Math.PI;
+      // if click in top 3rd of screen
+      if (clickY < window.innerHeight / 3) {
+        newDirection2 = Math.PI / 2;
+      } else if (clickY > (2 * window.innerHeight) / 3) {
+        newDirection2 = (3 * Math.PI) / 2;
+      }
+    }
+
+    // if click in right 3rd of screen
+    else if (clickX > (2 * window.innerWidth) / 3) {
+      newDirection1 = 0;
+      // if click in top 3rd of screen
+      if (clickY < window.innerHeight / 3) {
+        newDirection2 = Math.PI / 2;
+      } else if (clickY > (2 * window.innerHeight) / 3) {
+        newDirection2 = (3 * Math.PI) / 2;
+      }
+    }
+
+    if (newDirection1 !== undefined) {
+      // if + pi or - pi, ignore
+      if (
+        newDirection1 !== this.snake.naturalDirection + Math.PI &&
+        newDirection1 !== this.snake.naturalDirection - Math.PI
+      ) {
+        this.nextDirection = newDirection1;
+      } else {
+        if (newDirection2 !== undefined) {
+          this.nextDirection = newDirection1;
+        }
+      }
+    }
+
+    if (newDirection2 !== undefined) {
+      if (
+        this.nextDirection !== newDirection2 + Math.PI &&
+        this.nextDirection !== newDirection2 - Math.PI
+      ) {
+        this.subsequentDirection = newDirection2;
+      }
+    }
+  };
 
   handleSnakeKeyDown = (e: KeyboardEvent) => {
     if (this.AI) return;
