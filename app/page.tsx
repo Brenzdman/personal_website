@@ -14,9 +14,9 @@ export default function Home() {
 
       <SnakeCanvas />
 
-      <Border>
+      {/* <Border>
         <SecondSegment />
-      </Border>
+      </Border> */}
     </div>
   );
 }
